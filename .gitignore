@@ -1,0 +1,15 @@
+./test_*
+*.lib
+*.exp
+*.obj
+*.pyd
+*.pyc
+**/dist/*
+**/build/*
+./*.egg-info
+./.ipynb_checkpoints/*
+*.hdf5
+*.avi
+*.so
+.DS_Store
+._*
