@@ -276,8 +276,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.sbar = QtWidgets.QStatusBar(self)
         self.setStatusBar(self.sbar)
 
-    def __cb_on_frameReady(self, na_frame):
-        # print(na_frame.shape, na_frame.max())
+    def frameReady(self, na_frame):
         self.update()
     #
 
@@ -288,7 +287,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
-    def start_preview(self, i_camera_idx, oc_camera_info, i_timeout_ms=17):
+    def start_preview(self, i_camera_idx, oc_camera_info):
         if self.oc_frame_cap_thread != None:
             self.fatal_error("Preallocated camera object detected")
 
@@ -296,7 +295,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.oc_camera_info = oc_camera_info
 
         self.oc_frame_cap_thread = COpenCVframeCaptureThread(self.i_camera_idx)
-        self.oc_frame_cap_thread.frameReady.connect(self.__cb_on_frameReady, Qt.QueuedConnection)
+        self.oc_frame_cap_thread.frameReady.connect(self.frameReady, Qt.QueuedConnection)
 
         self.oc_view_finder = CNdarrayPreviewWidget(self.oc_frame_cap_thread.na_frame)
         self.setCentralWidget(self.oc_view_finder)

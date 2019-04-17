@@ -195,7 +195,7 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         i_val = int(i_new_value*(0x0FFF)/100)|0x3000
         self.__update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
 
-    def start_preview(self, i_camera_idx, oc_camera_info, i_timeout_ms=17):
+    def start_preview(self, i_camera_idx, oc_camera_info):
         super().start_preview(i_camera_idx, oc_camera_info)
         self.__reset_all_settings()
     #
