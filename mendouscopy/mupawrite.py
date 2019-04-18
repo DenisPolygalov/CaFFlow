@@ -31,7 +31,7 @@ http://www.fsf.org/
 
 
 class CMuPaVideoWriter(object):
-    def __init__(self, s_root_dir, s_file_prefix, f_fps, i_frame_w, i_frame_h, i_nframes_per_file=1000):
+    def __init__(self, s_root_dir, s_file_prefix, f_fps, i_frame_w, i_frame_h, i_nframes_per_file=1000, master=None):
         if not os.path.isdir(s_root_dir):
             raise IOError("Root directory does not exist or not accessible!")
 
@@ -41,16 +41,20 @@ class CMuPaVideoWriter(object):
         self.i_frame_w = int(i_frame_w)
         self.i_frame_h = int(i_frame_h)
         self.i_nframes_per_file = i_nframes_per_file
+        self.oc_master_writer = master
         # Use EXTERNAL (MUST be provided by FFMPEG) lossless codec
         self.oc_fourcc = cv.VideoWriter_fourcc(*'FFV1')
         self.b_new_file_at_next_write = False
 
         # e.g. ./data/2019-04-16_16-12-34
-        self.s_out_root_dir = os.path.join(self.s_root_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        if self.oc_master_writer == None:
+            self.s_out_root_dir = os.path.join(self.s_root_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+            os.mkdir(self.s_out_root_dir)
+        else:
+            self.s_out_root_dir = self.oc_master_writer.s_out_root_dir
 
-        os.mkdir(self.s_out_root_dir)
         if not os.path.isdir(self.s_out_root_dir):
-            raise IOError("Unable to make output root directory!")
+            raise IOError("Unable to make/access output root directory!")
 
         # these variables are changed every new recording session
         self.s_out_rses_dir = None
@@ -64,11 +68,14 @@ class CMuPaVideoWriter(object):
         self.close()
 
         # e.g. ./data/2019-04-16_16-12-34/H16_M12_S34
-        self.s_out_rses_dir = os.path.join(self.s_out_root_dir, datetime.datetime.now().strftime('H%H_M%M_S%S'))
+        if self.oc_master_writer == None:
+            self.s_out_rses_dir = os.path.join(self.s_out_root_dir, datetime.datetime.now().strftime('H%H_M%M_S%S'))
+            os.mkdir(self.s_out_rses_dir)
+        else:
+            self.s_out_rses_dir = self.oc_master_writer.s_out_rses_dir
 
-        os.mkdir(self.s_out_rses_dir)
         if not os.path.isdir(self.s_out_rses_dir):
-            raise IOError("Unable to make recording session directory!")
+            raise IOError("Unable to make/access recording session directory!")
 
         self.i_out_file_id = 1
         self.i_out_frame_id = 0
