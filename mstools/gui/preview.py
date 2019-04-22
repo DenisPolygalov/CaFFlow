@@ -41,7 +41,7 @@ http://www.fsf.org/
 
 
 class CQCameraPreviewWindow(QtWidgets.QMainWindow):
-    sig_closing_myself = QtCore.pyqtSignal()
+    closeSignal = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(CQCameraPreviewWindow, self).__init__(*args, **kwargs)
@@ -192,7 +192,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         if self.is_save_state_needed():
             self.save_state()
         self.stop_preview()
-        self.sig_closing_myself.emit()
+        self.closeSignal.emit()
     #
 #
 
@@ -273,7 +273,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
 
 
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
-    sig_closing_myself = QtCore.pyqtSignal()
+    closeSignal = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
@@ -342,7 +342,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         if self.is_save_state_needed():
             self.save_state()
         self.stop_preview()
-        self.sig_closing_myself.emit()
+        self.closeSignal.emit()
     #
 #
 

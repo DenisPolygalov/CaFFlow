@@ -96,7 +96,7 @@ class CMainWindow(QtWidgets.QWidget):
             self.win_preview = CQCameraPreviewWindow()
         # ------------------------------------------------------------
 
-        self.win_preview.sig_closing_myself.connect(self.__cb_on_preview_closed)
+        self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)
         self.win_preview.show()
         self.win_preview.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)
         if self.oc_frame_cap_thread != None:
