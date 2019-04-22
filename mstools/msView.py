@@ -158,15 +158,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # top side tool-bar
         self.addToolBar(self.toolbar)
 
-    def __update_cap_prop(self, i_prop_id, prop_new_val):
-        if self.oc_frame_cap_thread == None: return
-        s_prev = repr(self.oc_frame_cap_thread.oc_camera.get(i_prop_id))
-        self.oc_frame_cap_thread.oc_camera.set(i_prop_id, prop_new_val)
-        s_post = repr(self.oc_frame_cap_thread.oc_camera.get(i_prop_id))
-        self.sbar.showMessage("%s -> %s" % (s_prev, s_post), 3000)
-
-    def __reset_all_settings(self):
-        self.__update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
+    def __reset_UI(self):
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
         self.cbox_frame_rate.cbox.setCurrentIndex(self._INIT_FRATE_IDX)
         self.sld_exposure.slider.setSliderPosition(self._INIT_EXPOSURE)
         self.sld_gain.slider.setSliderPosition(self._INIT_GAIN)
@@ -174,30 +167,30 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # TODO add here (re)initialization code for other GUI elements
 
     def __cb_on_set_CMOS_btn_clicked(self, event):
-        if self.oc_frame_cap_thread == None: return
-        self.__reset_all_settings()
+        if not self.is_started(): return
+        self.__reset_UI()
 
     def __cb_on_frame_rate_cbox_index_changed(self, event):
-        if self.oc_frame_cap_thread == None: return
-        self.__update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self.cbox_frame_rate.cbox.currentIndex()])
+        if not self.is_started(): return
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self.cbox_frame_rate.cbox.currentIndex()])
 
     def __cb_on_exposure_changed(self, i_new_value):
-        self.__update_cap_prop(cv.CAP_PROP_BRIGHTNESS, i_new_value)
+        self.update_cap_prop(cv.CAP_PROP_BRIGHTNESS, i_new_value)
 
     def __cb_on_gain_changed(self, i_new_value):
         # Gains between 32 and 64 must be even for MT9V032
         if i_new_value >= 32 and (i_new_value % 2 == 1):
-            self.__update_cap_prop(cv.CAP_PROP_GAIN, i_new_value + 1)
+            self.update_cap_prop(cv.CAP_PROP_GAIN, i_new_value + 1)
         else:
-            self.__update_cap_prop(cv.CAP_PROP_GAIN, i_new_value)
+            self.update_cap_prop(cv.CAP_PROP_GAIN, i_new_value)
 
     def __cb_on_excitation_changed(self, i_new_value):
         i_val = int(i_new_value*(0x0FFF)/100)|0x3000
-        self.__update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
+        self.update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
 
     def start_preview(self, i_camera_idx, oc_camera_info):
         super().start_preview(i_camera_idx, oc_camera_info)
-        self.__reset_all_settings()
+        self.__reset_UI()
     #
 #
 

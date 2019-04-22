@@ -257,6 +257,17 @@ class COpenCVframeCaptureThread(QtCore.QThread):
             self.i_frame_id += 1
             self.frameReady.emit(self.na_frame)
         self.oc_camera.release()
+
+    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
+        # TODO use i_cam_id and extend to multiple cameras
+        prop_old = self.oc_camera.get(i_prop_id)
+        self.oc_camera.set(i_prop_id, prop_new_val)
+        prop_new = self.oc_camera.get(i_prop_id)
+        return (prop_old, prop_new)
+
+    def get_frame(self, i_cam_id):
+        # TODO use i_cam_id and extend to multiple cameras
+        return self.na_frame
     #
 #
 
@@ -267,7 +278,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
 
-        self.oc_view_finder = None
+        self.oc_canvas = None
         self.oc_frame_cap_thread = None
         self.oc_camera_info = None
         self.i_camera_idx = -1
@@ -297,10 +308,15 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.oc_frame_cap_thread = COpenCVframeCaptureThread(self.i_camera_idx)
         self.oc_frame_cap_thread.frameReady.connect(self.frameReady, Qt.QueuedConnection)
 
-        self.oc_view_finder = CNdarrayPreviewWidget(self.oc_frame_cap_thread.na_frame)
-        self.setCentralWidget(self.oc_view_finder)
+        self.oc_canvas = CNdarrayPreviewWidget(self.oc_frame_cap_thread.get_frame(self.i_camera_idx))
+        self.setCentralWidget(self.oc_canvas)
 
         self.oc_frame_cap_thread.start()
+
+    def update_cap_prop(self, i_prop_id, prop_new_val):
+        prop_old, prop_new = self.oc_frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
+        self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
+        return (prop_old, prop_new)
 
     def stop_preview(self):
         if self.oc_frame_cap_thread == None:
@@ -311,6 +327,11 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.oc_frame_cap_thread = None
         self.oc_camera_info = None
         self.i_camera_idx = -1
+
+    def is_started(self):
+        if self.oc_frame_cap_thread == None:
+            return False
+        return True
 
     def is_save_state_needed(self):
         return False
