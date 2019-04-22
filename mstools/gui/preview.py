@@ -149,7 +149,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
-    def start_preview(self, i_camera_idx, oc_camera_info):
+    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         if self.oc_camera != None:
             self.fatal_error("Preallocated camera object detected")
 
@@ -278,10 +278,10 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
 
-        self.oc_canvas = None
-        self.oc_frame_cap_thread = None
-        self.oc_camera_info = None
         self.i_camera_idx = -1
+        self.oc_camera_info = None
+        self.__frame_cap_thread = None
+        self.__oc_canvas = None
 
         # bottom status bar
         self.sbar = QtWidgets.QStatusBar(self)
@@ -292,44 +292,43 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     #
 
     def fatal_error(self, s_msg):
-        if self.oc_frame_cap_thread != None:
-            self.oc_frame_cap_thread.requestInterruption()
-            self.oc_frame_cap_thread.wait(10000)
+        if self.__frame_cap_thread != None:
+            self.__frame_cap_thread.requestInterruption()
+            self.__frame_cap_thread.wait(10000)
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
-    def start_preview(self, i_camera_idx, oc_camera_info):
-        if self.oc_frame_cap_thread != None:
+    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+        if self.__frame_cap_thread != None:
             self.fatal_error("Preallocated camera object detected")
 
         self.i_camera_idx = i_camera_idx
         self.oc_camera_info = oc_camera_info
+        self.__frame_cap_thread = oc_frame_cap_thread
+        self.__frame_cap_thread.frameReady.connect(self.frameReady, Qt.QueuedConnection)
 
-        self.oc_frame_cap_thread = COpenCVframeCaptureThread(self.i_camera_idx)
-        self.oc_frame_cap_thread.frameReady.connect(self.frameReady, Qt.QueuedConnection)
-
-        self.oc_canvas = CNdarrayPreviewWidget(self.oc_frame_cap_thread.get_frame(self.i_camera_idx))
-        self.setCentralWidget(self.oc_canvas)
-
-        self.oc_frame_cap_thread.start()
+        self.__oc_canvas = CNdarrayPreviewWidget(self.__frame_cap_thread.get_frame(self.i_camera_idx))
+        self.setCentralWidget(self.__oc_canvas)
 
     def update_cap_prop(self, i_prop_id, prop_new_val):
-        prop_old, prop_new = self.oc_frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
+        if self.__frame_cap_thread == None:
+            return # this is correct logic, no error here
+
+        prop_old, prop_new = self.__frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
         self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
         return (prop_old, prop_new)
 
     def stop_preview(self):
-        if self.oc_frame_cap_thread == None:
+        if self.__frame_cap_thread == None:
             return # this is correct logic, no error here
 
-        self.oc_frame_cap_thread.requestInterruption()
-        self.oc_frame_cap_thread.wait(10000)
-        self.oc_frame_cap_thread = None
+        self.__frame_cap_thread.frameReady.disconnect(self.frameReady)
+        self.__frame_cap_thread = None
         self.oc_camera_info = None
         self.i_camera_idx = -1
 
     def is_started(self):
-        if self.oc_frame_cap_thread == None:
+        if self.__frame_cap_thread == None:
             return False
         return True
 

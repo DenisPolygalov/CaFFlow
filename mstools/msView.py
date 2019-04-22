@@ -18,6 +18,7 @@ from gui.widgets import CLabeledComboBox
 from gui.widgets import CLabeledSpinSlider
 from gui.preview import CQCameraPreviewWindow
 from gui.preview import COpenCVPreviewWindow
+from gui.preview import COpenCVframeCaptureThread
 
 
 """
@@ -45,6 +46,7 @@ class CMainWindow(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super(CMainWindow, self).__init__(*args, **kwargs)
 
+        self.oc_frame_cap_thread = None
         self.win_preview = None
 
         # check if we have any cameras before doing anything else
@@ -83,9 +85,11 @@ class CMainWindow(QtWidgets.QWidget):
 
         # >>> window type selection depend on the present hardware <<<
         if (s_cam_descr.find("MINISCOPE") >= 0) or (s_cam_descr.find("C310") >= 0):
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = CMiniScopePreviewWindow()
 
         elif s_cam_descr.find("Tape Recorder") >= 0:
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = COpenCVPreviewWindow()
 
         else:
@@ -94,18 +98,30 @@ class CMainWindow(QtWidgets.QWidget):
 
         self.win_preview.sig_closing_myself.connect(self.__cb_on_preview_closed)
         self.win_preview.show()
-        self.win_preview.start_preview(i_idx, self.l_cameras[i_idx])
+        self.win_preview.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)
+        if self.oc_frame_cap_thread != None:
+            self.oc_frame_cap_thread.start()
 
     def __cb_on_preview_closed(self):
+        self.__interrupt_threads_gracefully()
         self.btn_preview.setEnabled(True)
         self.cbox_cam_selector.setEnabled(True)
     #
 
+    def __interrupt_threads_gracefully(self):
+        if self.oc_frame_cap_thread != None:
+            self.oc_frame_cap_thread.requestInterruption()
+            self.oc_frame_cap_thread.wait(10000)
+            del self.oc_frame_cap_thread
+            self.oc_frame_cap_thread = None
+
     def fatal_error(self, s_msg):
+        self.__interrupt_threads_gracefully()
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
     def closeEvent(self, event):
+        self.__interrupt_threads_gracefully()
         if self.win_preview != None:
             self.win_preview.close()
 #
@@ -188,8 +204,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         i_val = int(i_new_value*(0x0FFF)/100)|0x3000
         self.update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
 
-    def start_preview(self, i_camera_idx, oc_camera_info):
-        super().start_preview(i_camera_idx, oc_camera_info)
+    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
         self.__reset_UI()
     #
 #

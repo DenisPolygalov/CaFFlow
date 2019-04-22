@@ -13,6 +13,7 @@ from PyQt5.QtMultimedia import QCameraInfo
 
 import cv2 as cv
 from gui.preview import COpenCVPreviewWindow
+from gui.preview import COpenCVframeCaptureThread
 
 
 """
@@ -41,12 +42,6 @@ class CMainWindow(COpenCVPreviewWindow):
         super(CMainWindow, self).__init__(*args, **kwargs)
         self.i_frame_id = -1
 
-        self.l_cameras = QCameraInfo.availableCameras()
-        if len(self.l_cameras) == 0:
-            raise RuntimeError("No cameras found!")
-
-        self.start_preview(0, self.l_cameras[0])
-
     def frameReady(self, na_frame):
         self.update()
         self.i_frame_id += 1
@@ -63,7 +58,15 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("CamViewOpenCV")
 
+    l_cameras = QCameraInfo.availableCameras()
+    if len(l_cameras) == 0:
+        raise RuntimeError("No cameras found!")
+
+    i_camera_idx = 0
+    oc_frame_cap_thread = COpenCVframeCaptureThread(i_camera_idx)
     oc_main_win = CMainWindow()
+    oc_main_win.start_preview(i_camera_idx, l_cameras[i_camera_idx], oc_frame_cap_thread)
+    oc_frame_cap_thread.start()
     oc_main_win.show()
     sys.exit(app.exec_())
 #
