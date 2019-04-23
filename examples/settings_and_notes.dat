@@ -1,0 +1,5 @@
+animal	excitation	msCamExposure	recordLength
+name	60	255	0
+behav_ROI_x	behav_ROI_y	behav_ROI_w	behav_ROI_h
+8	242	624	101
+elapsedTime	Note
