@@ -53,7 +53,7 @@ Create and activate new environment:
 
 `(cafflow)>`
 
-- Install necessary Python packages:
+Install necessary Python packages:
 
 `(cafflow)> conda install opencv numpy pandas scipy scikit-image`
 
