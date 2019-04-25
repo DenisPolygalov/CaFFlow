@@ -12,8 +12,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtMultimedia import QCameraInfo
 
 import cv2 as cv
-from gui.preview import COpenCVPreviewWindow
-from gui.preview import COpenCVframeCaptureThread
+from common.preview import COpenCVPreviewWindow
+from common.capture import COpenCVframeCaptureThread
 
 
 """
@@ -68,6 +68,8 @@ if __name__ == '__main__':
     oc_main_win.start_preview(i_camera_idx, l_cameras[i_camera_idx], oc_frame_cap_thread)
     oc_frame_cap_thread.start()
     oc_main_win.show()
-    sys.exit(app.exec_())
+    app.exec_()
+    oc_frame_cap_thread.requestInterruption()
+    oc_frame_cap_thread.wait(10000)
 #
 

@@ -225,53 +225,6 @@ class CNdarrayPreviewWidget(QtWidgets.QWidget):
 #
 
 
-class COpenCVframeCaptureThread(QtCore.QThread):
-    frameReady = QtCore.pyqtSignal(np.ndarray)
-
-    def __init__(self, i_camera_idx, *args, **kwargs):
-        QtCore.QThread.__init__(self, *args, **kwargs)
-        self.b_running = False
-        self.oc_camera = cv.VideoCapture(i_camera_idx)
-        self.i_frame_id = -1 # so valid frame numbers will start from zero
-
-        b_status, self.na_frame = self.oc_camera.read()
-        if not b_status:
-            raise RuntimeError("Unable to read first frame")
-
-        if self.na_frame.ndim != 3 or self.na_frame.shape[2] != 3:
-            raise RuntimeError("Unexpected frame shape: %s" % repr(self.na_frame.shape))
-
-        self.i_frame_h = self.na_frame.shape[0]
-        self.i_frame_w = self.na_frame.shape[1]
-        self.i_ncolor_channels = self.na_frame.shape[2]
-
-    def run(self):
-        self.b_running = True
-        while self.b_running:
-            if self.isInterruptionRequested():
-                self.b_running = False
-                break
-            b_status, self.na_frame[...] = self.oc_camera.read()
-            if not b_status:
-                raise RuntimeError("Unable to read next frame")
-            self.i_frame_id += 1
-            self.frameReady.emit(self.na_frame)
-        self.oc_camera.release()
-
-    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
-        # TODO use i_cam_id and extend to multiple cameras
-        prop_old = self.oc_camera.get(i_prop_id)
-        self.oc_camera.set(i_prop_id, prop_new_val)
-        prop_new = self.oc_camera.get(i_prop_id)
-        return (prop_old, prop_new)
-
-    def get_frame(self, i_cam_id):
-        # TODO use i_cam_id and extend to multiple cameras
-        return self.na_frame
-    #
-#
-
-
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
 

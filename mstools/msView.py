@@ -14,11 +14,11 @@ from PyQt5.QtMultimedia import QCameraInfo
 
 import cv2 as cv
 
-from gui.widgets import CLabeledComboBox
-from gui.widgets import CLabeledSpinSlider
-from gui.preview import CQCameraPreviewWindow
-from gui.preview import COpenCVPreviewWindow
-from gui.preview import COpenCVframeCaptureThread
+from common.widgets import CLabeledComboBox
+from common.widgets import CLabeledSpinSlider
+from common.preview import CQCameraPreviewWindow
+from common.preview import COpenCVPreviewWindow
+from common.capture import COpenCVframeCaptureThread
 
 
 """
