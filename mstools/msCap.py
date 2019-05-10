@@ -125,9 +125,40 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 #
 
 
+class CTableItemDelegate(QtWidgets.QItemDelegate):
+    def createEditor(self, parent, option, index):
+        comboBox = QtWidgets.QComboBox(parent)
+        comboBox.addItem("Off")
+        comboBox.addItem("On")
+        comboBox.activated.connect(self.emitCommitData)
+        return comboBox
+
+    def setEditorData(self, editor, index):
+        comboBox = editor
+        if not comboBox:
+            return
+
+        pos = comboBox.findText(index.model().data(index), Qt.MatchExactly)
+        comboBox.setCurrentIndex(pos)
+
+    def setModelData(self, editor, model, index):
+        comboBox = editor
+        if not comboBox:
+            return
+
+        model.setData(index, comboBox.currentText())
+
+    def emitCommitData(self):
+        self.commitData.emit(self.sender())
+#
+
+
 class CMainWindow(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super(CMainWindow, self).__init__(*args, **kwargs)
+        self.l_do_preview = []
+        self.l_do_recording = []
+        self.l_do_capture = []
 
         self.oc_frame_cap_thread = None
         self.win_preview = None
@@ -141,19 +172,77 @@ class CMainWindow(QtWidgets.QWidget):
 
         self.cbox_cam_selector = QtWidgets.QComboBox()
         self.cbox_cam_selector.addItems([ "[ %i ] %s" % (i_idx, oc_cam.description()) for i_idx, oc_cam in enumerate(self.l_cameras)])
-        self.l_do_capture = [False for i_idx, _, in enumerate(self.l_cameras)]
 
         self.btn_preview = QtWidgets.QPushButton("Preview")
         self.btn_preview.clicked.connect(self.__cb_on_btn_preview)
+
+        self.oc_vsrc_table = QtWidgets.QTableWidget()
+        self.oc_vsrc_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self.oc_vsrc_table.setItemDelegate(CTableItemDelegate(self))
+        self.oc_vsrc_table.horizontalHeader().setDefaultSectionSize(90)
+        self.oc_vsrc_table.setColumnCount(3)
+        self.oc_vsrc_table.setHorizontalHeaderLabels(("Video Source", "Preview", "Recording"))
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
+        self.oc_vsrc_table.verticalHeader().hide()
+
+        for i_idx, oc_cam in enumerate(self.l_cameras):
+            self.__add_row(oc_cam.description())
+        self.oc_vsrc_table.resizeColumnsToContents()
+
+        self.btn_action = QtWidgets.QPushButton("Action")
+        self.btn_action.clicked.connect(self.__cb_on_btn_action)
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(self.lbl_video_source, 0, 0, 1, 1)
         layout.addWidget(self.cbox_cam_selector, 1, 0, 1, 1)
         layout.addWidget(self.btn_preview, 1, 1, 1, 1)
+        layout.addWidget(self.oc_vsrc_table, 2, 0, 1, 1)
+        layout.addWidget(self.btn_action, 3, 0, 1, 1)
 
         self.setLayout(layout)
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(500)
         self.setWindowTitle("Video Source Selector")
+
+    def __add_row(self, s_vsrc_name):
+        i_nrows = self.oc_vsrc_table.rowCount()
+        self.oc_vsrc_table.setRowCount(i_nrows + 1)
+        item0 = QtWidgets.QTableWidgetItem(s_vsrc_name)
+        item1 = QtWidgets.QTableWidgetItem("Off")
+        item2 = QtWidgets.QTableWidgetItem("Off")
+        self.oc_vsrc_table.setItem(i_nrows, 0, item0)
+        self.oc_vsrc_table.setItem(i_nrows, 1, item1)
+        self.oc_vsrc_table.setItem(i_nrows, 2, item2)
+        self.oc_vsrc_table.openPersistentEditor(item1)
+        self.oc_vsrc_table.openPersistentEditor(item2)
+
+    def __cb_on_btn_action(self):
+        i_ncols = self.oc_vsrc_table.columnCount()
+        if i_ncols != 3:
+            raise ValueError("Sanity check failed: %i" % i_ncols)
+
+        self.l_do_preview.clear()
+        self.l_do_recording.clear()
+        self.l_do_capture.clear()
+
+        for i_row_id in range(self.oc_vsrc_table.rowCount()):
+            item1 = self.oc_vsrc_table.item(i_row_id, 1)
+            if item1.text() == "On":
+                self.l_do_preview.append(True)
+            else:
+                self.l_do_preview.append(False)
+
+            item2 = self.oc_vsrc_table.item(i_row_id, 2)
+            if item2.text() == "On":
+                self.l_do_recording.append(True)
+            else:
+                self.l_do_recording.append(False)
+
+        self.l_do_capture = [b_prev or b_rec for (b_prev, b_rec) in zip(self.l_do_preview, self.l_do_recording)]
+        # print(self.l_do_preview)
+        # print(self.l_do_recording)
+        # print(self.l_do_capture)
 
     def __cb_on_btn_preview(self):
         self.btn_preview.setEnabled(False)
