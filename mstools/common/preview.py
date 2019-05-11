@@ -230,6 +230,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
 
         self.i_camera_idx = -1
         self.oc_camera_info = None

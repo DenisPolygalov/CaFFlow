@@ -128,8 +128,8 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 class CTableItemDelegate(QtWidgets.QItemDelegate):
     def createEditor(self, parent, option, index):
         comboBox = QtWidgets.QComboBox(parent)
-        comboBox.addItem("Off")
-        comboBox.addItem("On")
+        comboBox.addItem("off")
+        comboBox.addItem("ON")
         comboBox.activated.connect(self.emitCommitData)
         return comboBox
 
@@ -159,6 +159,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.l_do_preview = []
         self.l_do_recording = []
         self.l_do_capture = []
+        self.l_wins = []
 
         self.oc_frame_cap_thread = None
         self.win_preview = None
@@ -191,15 +192,25 @@ class CMainWindow(QtWidgets.QWidget):
             self.__add_row(oc_cam.description())
         self.oc_vsrc_table.resizeColumnsToContents()
 
-        self.btn_action = QtWidgets.QPushButton("Action")
+        self.btn_action = QtWidgets.QPushButton("ACQ")
         self.btn_action.clicked.connect(self.__cb_on_btn_action)
+
+        self.btn_record = QtWidgets.QPushButton("REC")
+        self.btn_record.clicked.connect(self.__cb_on_btn_record)
+        self.btn_record.setEnabled(False)
+
+        self.btn_stop = QtWidgets.QPushButton("STOP")
+        self.btn_stop.clicked.connect(self.__cb_on_btn_stop)
+        self.btn_stop.setEnabled(False)
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(self.lbl_video_source, 0, 0, 1, 1)
         layout.addWidget(self.cbox_cam_selector, 1, 0, 1, 1)
         layout.addWidget(self.btn_preview, 1, 1, 1, 1)
-        layout.addWidget(self.oc_vsrc_table, 2, 0, 1, 1)
+        layout.addWidget(self.oc_vsrc_table, 2, 0, 1, 3)
         layout.addWidget(self.btn_action, 3, 0, 1, 1)
+        layout.addWidget(self.btn_record, 3, 1, 1, 1)
+        layout.addWidget(self.btn_stop, 3, 2, 1, 1)
 
         self.setLayout(layout)
         self.setMinimumWidth(500)
@@ -209,8 +220,8 @@ class CMainWindow(QtWidgets.QWidget):
         i_nrows = self.oc_vsrc_table.rowCount()
         self.oc_vsrc_table.setRowCount(i_nrows + 1)
         item0 = QtWidgets.QTableWidgetItem(s_vsrc_name)
-        item1 = QtWidgets.QTableWidgetItem("Off")
-        item2 = QtWidgets.QTableWidgetItem("Off")
+        item1 = QtWidgets.QTableWidgetItem("off")
+        item2 = QtWidgets.QTableWidgetItem("off")
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
         self.oc_vsrc_table.setItem(i_nrows, 2, item2)
@@ -228,21 +239,69 @@ class CMainWindow(QtWidgets.QWidget):
 
         for i_row_id in range(self.oc_vsrc_table.rowCount()):
             item1 = self.oc_vsrc_table.item(i_row_id, 1)
-            if item1.text() == "On":
+            if item1.text() == "ON":
                 self.l_do_preview.append(True)
             else:
                 self.l_do_preview.append(False)
 
             item2 = self.oc_vsrc_table.item(i_row_id, 2)
-            if item2.text() == "On":
+            if item2.text() == "ON":
                 self.l_do_recording.append(True)
             else:
                 self.l_do_recording.append(False)
 
         self.l_do_capture = [b_prev or b_rec for (b_prev, b_rec) in zip(self.l_do_preview, self.l_do_recording)]
-        # print(self.l_do_preview)
-        # print(self.l_do_recording)
-        # print(self.l_do_capture)
+
+        if not any(item == True for item in self.l_do_capture):
+            QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
+                "No action specified.\nSelect the 'Preview' and/or 'Recording'\naction for at least one video source.")
+            return
+
+        self.btn_action.setEnabled(False)
+        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(self.l_do_capture)
+
+        for i_idx, oc_cam in enumerate(self.l_cameras):
+            if self.l_do_preview[i_idx]:
+                s_cam_descr = oc_cam.description()
+                # >>> window type selection depend on the present hardware <<<
+                if (s_cam_descr.find("MINISCOPE") >= 0) or (s_cam_descr.find("C310") >= 0):
+                    self.l_wins.append(CMiniScopePreviewWindow())
+                else:
+                    self.l_wins.append(COpenCVPreviewWindow())
+                # ------------------------------------------------------------
+            else:
+                self.l_wins.append(None)
+
+        for i_idx, oc_win in enumerate(self.l_wins):
+            if oc_win == None: continue
+            oc_win.show()
+            oc_win.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)
+
+        if self.oc_frame_cap_thread != None:
+            self.oc_frame_cap_thread.start()
+
+        if any(item == True for item in self.l_do_recording):
+            self.btn_record.setEnabled(True)
+
+        self.btn_stop.setEnabled(True)
+    #
+
+    def __cb_on_btn_record(self):
+        self.btn_record.setEnabled(False)
+        for i_idx, b_rec in enumerate(self.l_do_recording):
+            if not b_rec: continue
+            print("Start recording from source: %s" % self.l_cameras[i_idx].description())
+
+    def __cb_on_btn_stop(self):
+        for i_idx, oc_win in enumerate(self.l_wins):
+            if oc_win == None: continue
+            oc_win.close()
+            del oc_win
+            self.l_wins[i_idx] = None
+        self.l_wins.clear()
+        self.btn_action.setEnabled(True)
+        self.btn_record.setEnabled(False)
+        self.btn_stop.setEnabled(False)
 
     def __cb_on_btn_preview(self):
         self.btn_preview.setEnabled(False)
