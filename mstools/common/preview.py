@@ -228,9 +228,10 @@ class CNdarrayPreviewWidget(QtWidgets.QWidget):
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, b_disable_close_button=False, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
-        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+        if b_disable_close_button:
+            self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
 
         self.i_camera_idx = -1
         self.oc_camera_info = None
@@ -242,7 +243,8 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.setStatusBar(self.sbar)
 
     def frameReady(self, na_frame):
-        self.update()
+        if self.windowState() != Qt.WindowMinimized:
+            self.update()
     #
 
     def fatal_error(self, s_msg):

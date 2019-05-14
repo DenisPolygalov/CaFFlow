@@ -103,23 +103,21 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             if b_do_cap:
                 self.l_cams[i_cam_idx].release()
 
-    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
+    def __check_cam_or_die(self, i_cam_id):
         if i_cam_id < 0 or i_cam_id >= len(self.l_cams):
             raise ValueError("Unknown camera index: %i" % i_cam_id)
         if not self.t_do_capture[i_cam_id]:
             raise ValueError("Capture mode for camera number %i is not enabled" % i_cam_id)
 
+    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
+        self.__check_cam_or_die(i_cam_id)
         prop_old = self.l_cams[i_cam_id].get(i_prop_id)
         self.l_cams[i_cam_id].set(i_prop_id, prop_new_val)
         prop_new = self.l_cams[i_cam_id].get(i_prop_id)
         return (prop_old, prop_new)
 
     def get_frame(self, i_cam_id):
-        if i_cam_id < 0 or i_cam_id >= len(self.l_frames):
-            raise ValueError("Unknown camera index: %i" % i_cam_id)
-        if not self.t_do_capture[i_cam_id]:
-            raise ValueError("Capture mode for camera number %i is not enabled" % i_cam_id)
-
+        self.__check_cam_or_die(i_cam_id)
         return self.l_frames[i_cam_id]
     #
 #
@@ -265,9 +263,9 @@ class CMainWindow(QtWidgets.QWidget):
                 s_cam_descr = oc_cam.description()
                 # >>> window type selection depend on the present hardware <<<
                 if (s_cam_descr.find("MINISCOPE") >= 0) or (s_cam_descr.find("C310") >= 0):
-                    self.l_wins.append(CMiniScopePreviewWindow())
+                    self.l_wins.append(CMiniScopePreviewWindow(b_disable_close_button=True))
                 else:
-                    self.l_wins.append(COpenCVPreviewWindow())
+                    self.l_wins.append(COpenCVPreviewWindow(b_disable_close_button=True))
                 # ------------------------------------------------------------
             else:
                 self.l_wins.append(None)
@@ -359,6 +357,12 @@ class CMainWindow(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         self.__interrupt_threads_gracefully()
+        for i_idx, oc_win in enumerate(self.l_wins):
+            if oc_win == None: continue
+            oc_win.close()
+            del oc_win
+            self.l_wins[i_idx] = None
+        self.l_wins.clear()
         if self.win_preview != None:
             self.win_preview.close()
 #
