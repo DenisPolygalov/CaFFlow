@@ -228,10 +228,9 @@ class CNdarrayPreviewWidget(QtWidgets.QWidget):
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
 
-    def __init__(self, *args, b_disable_close_button=False, **kwargs):
+    def __init__(self, *args, b_enable_close_button=False, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
-        if b_disable_close_button:
-            self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
         self.i_camera_idx = -1
         self.oc_camera_info = None

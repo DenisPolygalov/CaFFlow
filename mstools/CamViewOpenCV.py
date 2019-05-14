@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     i_camera_idx = 0
     oc_frame_cap_thread = COpenCVframeCaptureThread(i_camera_idx)
-    oc_main_win = CMainWindow()
+    oc_main_win = CMainWindow(b_enable_close_button=True)
     oc_main_win.start_preview(i_camera_idx, l_cameras[i_camera_idx], oc_frame_cap_thread)
     oc_frame_cap_thread.start()
     oc_main_win.show()
