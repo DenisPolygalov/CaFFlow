@@ -169,6 +169,10 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         if not self.t_do_capture[i_cam_id]:
             raise ValueError("Capture mode for camera number %i is not enabled" % i_cam_id)
 
+    def get_cam_cap_prop(self, i_cam_id, i_prop_id):
+        self.__check_cam_or_die(i_cam_id)
+        return self.l_cams[i_cam_id].get(i_prop_id)
+
     def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
         self.__check_cam_or_die(i_cam_id)
         prop_old = self.l_cams[i_cam_id].get(i_prop_id)
@@ -372,6 +376,11 @@ class CMainWindow(QtWidgets.QWidget):
 class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
     def __init__(self, *args, **kwargs):
         super(CSillyCameraPreviewWindow, self).__init__(*args, **kwargs)
+
+    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+        # Get camera properties such as FPS and/or frame size here
+        # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
 #
 
 
@@ -394,11 +403,16 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
 
     def __cb_on_resolution_cbox_index_changed(self, i_idx):
         print("resolution", i_idx)
-        # TODO use self.update_camp_prop() to change settings here
+        # TODO use self.update_cap_prop() to change GUI settings here
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
         print("frame_rate", i_idx)
-        # TODO use self.update_camp_prop() to change settings here
+        # TODO use self.update_cap_prop() to change GUI settings here
+
+    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+        # Get camera properties such as FPS and/or frame size here
+        # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
     #
 #
 

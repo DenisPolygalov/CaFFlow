@@ -265,9 +265,14 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.__oc_canvas = CNdarrayPreviewWidget(self.__frame_cap_thread.get_frame(self.i_camera_idx))
         self.setCentralWidget(self.__oc_canvas)
 
+    def get_cap_prop(self, i_prop_id):
+        if self.__frame_cap_thread == None:
+            raise ValueError("Unallocated camera object detected")
+        return self.__frame_cap_thread.get_cam_cap_prop(self.i_camera_idx, i_prop_id)
+
     def update_cap_prop(self, i_prop_id, prop_new_val):
         if self.__frame_cap_thread == None:
-            return # this is correct logic, no error here
+            raise ValueError("Unallocated camera object detected")
 
         prop_old, prop_new = self.__frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
         self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)

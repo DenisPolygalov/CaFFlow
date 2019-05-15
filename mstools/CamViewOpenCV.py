@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 
 
 import PyQt5 # hint for pyinstaller
@@ -41,11 +42,15 @@ class CMainWindow(COpenCVPreviewWindow):
     def __init__(self, *args, **kwargs):
         super(CMainWindow, self).__init__(*args, **kwargs)
         self.i_frame_id = -1
+        self.f_ts_prev = time.perf_counter()
 
     def frameReady(self, na_frame):
+        f_ts_curr = time.perf_counter()
+        s_FPS = "%.1f" % (1.0/(f_ts_curr - self.f_ts_prev))
+        self.f_ts_prev = f_ts_curr
         self.update()
         self.i_frame_id += 1
-        print(self.i_frame_id, na_frame.shape, na_frame.dtype, na_frame.min(), na_frame.max(), na_frame.mean())
+        print(self.i_frame_id, s_FPS, na_frame.shape, na_frame.dtype, na_frame.min(), na_frame.max(), na_frame.mean(), )
     #
 #
 
