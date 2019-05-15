@@ -335,7 +335,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.btn_record.setEnabled(False)
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
-            print("Start recording from source: %s" % self.l_caminfos[i_idx].description())
+            print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), oc_win.get_vstream_info())
 
     def __cb_on_btn_stop(self):
         self.__interrupt_threads_gracefully()
@@ -379,8 +379,12 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
-        # Get camera properties such as FPS and/or frame size here
+        # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
+        f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
+        if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+    #
 #
 
 
@@ -389,17 +393,26 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         super(CSmartCameraPreviewWindow, self).__init__(*args, **kwargs)
         self.toolbar = QtWidgets.QToolBar("Preview")
 
+        l_items = []
+        for oc_res in l_resolutions:
+            l_items.append("%i x %i" % (oc_res.width(), oc_res.height()))
         self.cbox_resolution = CLabeledComboBox("Resolution:")
+        self.cbox_resolution.cbox.addItems(l_items)
         self.cbox_resolution.cbox.currentIndexChanged.connect(self.__cb_on_resolution_cbox_index_changed)
+
         self.toolbar.addWidget(self.cbox_resolution)
         self.toolbar.addSeparator()
 
+        l_items = []
+        for oc_frate in l_frate_ranges:
+            l_items.append("%f" % oc_frate.minimumFrameRate)
         self.cbox_frame_rate = CLabeledComboBox("Frame Rate:")
+        self.cbox_frame_rate.cbox.addItems(l_items)
         self.cbox_frame_rate.cbox.currentIndexChanged.connect(self.__cb_on_frame_rate_cbox_index_changed)
-        self.toolbar.addWidget(self.cbox_frame_rate)
 
-        self.addToolBar(self.toolbar)
+        self.toolbar.addWidget(self.cbox_frame_rate)
         self.toolbar.addSeparator()
+        self.addToolBar(self.toolbar)
 
     def __cb_on_resolution_cbox_index_changed(self, i_idx):
         print("resolution", i_idx)
@@ -411,8 +424,23 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
-        # Get camera properties such as FPS and/or frame size here
+        # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
+        f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
+        if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+
+        i_curr_frate = int(self.get_cap_prop(cv.CAP_PROP_FPS))
+        for i_idx in range(self.cbox_frame_rate.cbox.count()):
+            if int(float(self.cbox_frame_rate.cbox.itemText(i_idx))) == i_curr_frate:
+                self.cbox_frame_rate.cbox.setCurrentIndex(i_idx)
+
+        i_frame_w = int(self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH))
+        i_frame_h = int(self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT))
+        s_res_hash = "%i x %i" % (i_frame_w, i_frame_h)
+        for i_idx in range(self.cbox_resolution.cbox.count()):
+            if self.cbox_resolution.cbox.itemText(i_idx) == s_res_hash:
+                self.cbox_resolution.cbox.setCurrentIndex(i_idx)
     #
 #
 

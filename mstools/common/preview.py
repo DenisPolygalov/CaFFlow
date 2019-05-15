@@ -232,6 +232,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
+        self.INIT_FRATE_VAL = 20 # in Hz
         self.i_camera_idx = -1
         self.oc_camera_info = None
         self.__frame_cap_thread = None
@@ -269,6 +270,13 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         if self.__frame_cap_thread == None:
             raise ValueError("Unallocated camera object detected")
         return self.__frame_cap_thread.get_cam_cap_prop(self.i_camera_idx, i_prop_id)
+
+    def get_vstream_info(self):
+        d_vstream_info = {}
+        d_vstream_info['FPS'] = self.get_cap_prop(cv.CAP_PROP_FPS)
+        d_vstream_info['FRAME_WIDTH'] = self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH)
+        d_vstream_info['FRAME_HEIGHT'] = self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT)
+        return d_vstream_info
 
     def update_cap_prop(self, i_prop_id, prop_new_val):
         if self.__frame_cap_thread == None:
