@@ -154,6 +154,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                 if b_do_cap:
                     b_status, self.l_frames[i_cam_idx][...] = self.l_cams[i_cam_idx].retrieve()
                     if not b_status:
+                        # seems like this happen inevitably during frame rate/size change events
                         raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
 
             self.i_frame_id += 1
@@ -292,14 +293,18 @@ class CMainWindow(QtWidgets.QWidget):
             return
 
         self.btn_preview.setEnabled(False)
+        self.oc_vsrc_table.setEnabled(False)
 
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
             if l_do_capture[i_idx]:
                 s_cam_descr = oc_cam_info.description()
 
                 # >>> window type selection depend on the present hardware <<<
-                if (s_cam_descr.find("MINISCOPE") >= 0) or (s_cam_descr.find("C310") >= 0):
+                if s_cam_descr.find("MINISCOPE") >= 0:
                     self.l_wins.append(CMiniScopePreviewWindow())
+
+                elif s_cam_descr.find("C310") >= 0:
+                    self.l_wins.append(CMiniScopePreviewWindow(b_emulation_mode=True))
 
                 elif s_cam_descr.find("Tape Recorder") >= 0:
                     self.l_wins.append(CSillyCameraPreviewWindow())
@@ -335,7 +340,19 @@ class CMainWindow(QtWidgets.QWidget):
         self.btn_record.setEnabled(False)
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
-            print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), oc_win.get_vstream_info())
+            d_vstream_info = oc_win.get_vstream_info()
+            print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
+            # TODO:
+            # Check if all cameras have equal frame rates.
+            # Warn user to change the frame rate values to all equal
+            # or synchronize all cameras to maser one here if possible.
+            # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
+            # Implement frame time stamp storage in the COpenCVmultiFrameCapThread.
+            # In order to be able to start recording here we also need file name prefixes
+            # and path to directory where the data will be stored.
+            # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
+            # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
+            # Estimate amount of dropped frames and implement correspondent counters.
 
     def __cb_on_btn_stop(self):
         self.__interrupt_threads_gracefully()
@@ -346,6 +363,7 @@ class CMainWindow(QtWidgets.QWidget):
             self.l_wins[i_idx] = None
         self.l_wins.clear()
         self.btn_preview.setEnabled(True)
+        self.oc_vsrc_table.setEnabled(True)
         self.btn_record.setEnabled(False)
         self.btn_stop.setEnabled(False)
 
@@ -391,6 +409,7 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
 class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
     def __init__(self, l_frate_ranges, l_resolutions, *args, **kwargs):
         super(CSmartCameraPreviewWindow, self).__init__(*args, **kwargs)
+        self.b_startup_guard = False
         self.toolbar = QtWidgets.QToolBar("Preview")
 
         l_items = []
@@ -415,15 +434,23 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         self.addToolBar(self.toolbar)
 
     def __cb_on_resolution_cbox_index_changed(self, i_idx):
-        print("resolution", i_idx)
-        # TODO use self.update_cap_prop() to change GUI settings here
+        if not self.is_started(): return
+        if self.b_startup_guard: return
+        l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
+        i_w, i_h = int(l_res[0]), int(l_res[1])
+        print("new frame size:", i_w, i_h)
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
-        print("frame_rate", i_idx)
-        # TODO use self.update_cap_prop() to change GUI settings here
+        if not self.is_started(): return
+        if self.b_startup_guard: return
+        f_cam_fps = float(self.cbox_frame_rate.cbox.itemText(i_idx))
+        print("new frame rate:", f_cam_fps)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+
+        self.b_startup_guard = True
+
         # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
@@ -441,11 +468,13 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         for i_idx in range(self.cbox_resolution.cbox.count()):
             if self.cbox_resolution.cbox.itemText(i_idx) == s_res_hash:
                 self.cbox_resolution.cbox.setCurrentIndex(i_idx)
+
+        self.b_startup_guard = False
     #
 #
 
 class CMiniScopePreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, b_emulation_mode=False, *args, **kwargs):
         super(CMiniScopePreviewWindow, self).__init__(*args, **kwargs)
 
         self._DEVICE_ID = 0x12
@@ -459,7 +488,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self._INIT_EXPOSURE = 255
         self._INIT_GAIN = 16
         self._INIT_EXCITATION = 0
-        self.setWindowTitle("Miniscope")
+
+        self.b_emulation_mode = b_emulation_mode
+        if self.b_emulation_mode:
+            self.setWindowTitle("Miniscope (EMULATION)")
+        else:
+            self.setWindowTitle("Miniscope")
 
         self.toolbar = QtWidgets.QToolBar("Preview")
 
@@ -498,6 +532,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.sld_gain.slider.setSliderPosition(self._INIT_GAIN)
         self.sld_excitation.slider.setSliderPosition(self._INIT_EXCITATION)
         # TODO add here (re)initialization code for other GUI elements
+        # DO NOT call self.update_cap_prop() here. Such calls must be
+        # implemented in the correspondent event handlers (i.e. self.__cb_on_*)
 
     def __cb_on_set_CMOS_btn_clicked(self, event):
         if not self.is_started(): return
@@ -523,6 +559,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+
+        if self.b_emulation_mode:
+            f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
+            if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
+                self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+
         self.__reset_UI()
     #
 #
