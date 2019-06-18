@@ -84,9 +84,13 @@ class CMainWindow(QtWidgets.QWidget):
         s_cam_descr = self.l_cameras[i_idx].description()
 
         # >>> window type selection depend on the present hardware <<<
-        if (s_cam_descr.find("MINISCOPE") >= 0) or (s_cam_descr.find("C310") >= 0):
+        if s_cam_descr.find("MINISCOPE") >= 0:
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = CMiniScopePreviewWindow()
+
+        elif s_cam_descr.find("C310") >= 0:
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
+            self.win_preview = CMiniScopePreviewWindow(b_emulation_mode=True)
 
         elif s_cam_descr.find("Tape Recorder") >= 0:
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
@@ -128,8 +132,8 @@ class CMainWindow(QtWidgets.QWidget):
 
 
 class CMiniScopePreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, *args, **kwargs):
-        super(CMiniScopePreviewWindow, self).__init__(*args, **kwargs)
+    def __init__(self, b_emulation_mode=False, *args, **kwargs):
+        super(CMiniScopePreviewWindow, self).__init__(*args, b_enable_close_button=True, **kwargs)
 
         self._DEVICE_ID = 0x12
         self._RECORD_START = 0x01
@@ -143,6 +147,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self._INIT_GAIN = 16
         self._INIT_EXCITATION = 0
         self.setWindowTitle("Miniscope")
+
+        self.b_emulation_mode = b_emulation_mode
+        if self.b_emulation_mode:
+            self.setWindowTitle("Miniscope (EMULATION)")
+        else:
+            self.setWindowTitle("Miniscope")
 
         self.toolbar = QtWidgets.QToolBar("Preview")
 
@@ -206,6 +216,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+
+        if self.b_emulation_mode:
+            f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
+            if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
+                self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+
         self.__reset_UI()
     #
 #

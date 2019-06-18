@@ -36,16 +36,20 @@ have strict set of external dependencies and guarantied backward compatibility.
 
 __FIXME: this is short description for those who already familiar with Python/Conda.__
 
-Download and install some sort of CLI based git client, such as 
+Download and install some sort of command line interface based `git` client, such as
 [Git for Windows](https://git-scm.com/download/win) if you don't have it installed already.
 
-Clone this repository:
+Launch the `git` client and install/activate [Git Large File Storage](https://git-lfs.github.com/) extension:
+
+`$ git lfs install`
+
+Change directory `(cd)` to the place where you plan to keep CaFFlow and clone this repository:
 
 `$ git clone https://github.com/DenisPolygalov/CaFFlow.git`
 
 Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't have it installed already.
 
-Create and activate new environment:
+Launch Miniconda command line prompt. Create and activate new environment:
 
 `(base)> conda create -n cafflow`
 
@@ -58,11 +62,11 @@ Install necessary Python packages:
 `(cafflow)> conda install opencv numpy pandas scipy scikit-image`
 
 The set of packages above is sufficient to run analysis without visualization (on a headless server for example) and GUI applications.
-To add visualization capability - install Matplotlib:
+To add visualization capability - install Matplotlib package:
 
 `(cafflow)> conda install matplotlib`
 
-For GUI-based applications - install PyQt:
+For GUI-based applications - install PyQt package:
 
 `(cafflow)> conda install pyqt`
 
