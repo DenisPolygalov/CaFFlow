@@ -27,7 +27,7 @@ along with this program; if not, a copy is available at
 http://www.fsf.org/
 """
 
-def enum_video_files_dir(target_source, s_wildcard, b_verbose=False):
+def enum_video_files_dir(target_source, s_wildcard, i_num_pos=-1, b_verbose=False):
     """
     See enum_video_files() for details.
     """
@@ -37,7 +37,7 @@ def enum_video_files_dir(target_source, s_wildcard, b_verbose=False):
     # l_file_names = ['some_dir8\msCam1.avi', 'some_dir8\msCam10.avi', 'some_dir8\mcCam2.avi', ...]
     l_file_numbers = []
     # l_file_numbers = [1, 10, 2, ...]
-    
+
     if len(l_file_names) == 0:
         raise OSError("No matching files found in: %s" % target_source)
     #
@@ -54,25 +54,29 @@ def enum_video_files_dir(target_source, s_wildcard, b_verbose=False):
         #
         # os.path.split(s_fname)[-1] will be only the file name, i.e. 'mcCam2.avi' etc.
         l_numbers_in_fname = re.findall(r'\d+', os.path.split(s_fname)[-1])
-        # if len(l_numbers_in_fname) != 1:
-        #     raise ValueError("Wrong file name format: %s" % s_fname)
+
         try:
-            l_file_numbers.append(int(l_numbers_in_fname[-1]))
+           s_num_pos = l_numbers_in_fname[i_num_pos]
+        except IndexError:
+            raise IndexError("Wrong number position (%d) for list: %s from file: %s" % (i_num_pos, repr(l_numbers_in_fname), s_fname))
+
+        try:
+            l_file_numbers.append(int(s_num_pos))
         except ValueError:
             raise ValueError("Wrong file number: %s" % s_fname)
-        #
+
     # sort numbers in file names
     l_idx = [i[0] for i in sorted(enumerate(l_file_numbers), key=lambda x:x[1])]
     l_sorted_file_names   = [l_file_names[i]   for i in l_idx]
     l_sorted_file_numbers = [l_file_numbers[i] for i in l_idx]
-    
+
     # calculate difference between adjacent file numbers and check for missing files
     if len(l_sorted_file_numbers) >= 2:
         l_fnum_diff = [j - i for i, j in zip(l_sorted_file_numbers[:-1], l_sorted_file_numbers[1:])]
         if sum(l_fnum_diff) != len(l_fnum_diff):
             raise ValueError("Missing files (holes in numbering) found in: %s" % target_source)
         #
-    #
+
     # another method
     if max(l_sorted_file_numbers) != len(l_sorted_file_names):
         raise ValueError("Missing files (length mismatch) found in: %s" % target_source)
@@ -109,7 +113,7 @@ def enum_video_files_txt(target_source):
     return tuple(l_out_file_names)
 #
 
-def enum_video_files(target_source, s_wildcard):
+def enum_video_files(target_source, s_wildcard, i_num_pos=-1, b_verbose=False):
     """
     Return a tuple of strings pointed to a set of input *.avi files.
     The 'target_source' can be a path to a directory containing the set,
@@ -124,7 +128,7 @@ def enum_video_files(target_source, s_wildcard):
     loading from a text file. Files names will be loaded as is.
     """
     if os.path.isdir(target_source):
-        return enum_video_files_dir(target_source, s_wildcard)
+        return enum_video_files_dir(target_source, s_wildcard, i_num_pos=i_num_pos, b_verbose=b_verbose)
     #
     elif os.path.isfile(target_source):
         return enum_video_files_txt(target_source)
