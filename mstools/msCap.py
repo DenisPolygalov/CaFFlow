@@ -40,8 +40,9 @@ along with this program; if not, a copy is available at
 http://www.fsf.org/
 """
 
-
-def camera_sync_load_and_start(oc_qcamera):
+# These two functions are to be used privately, in this file,
+# e.g. called from within various *CameraPreviewWindow() classes.
+def _camera_sync_load_and_start(oc_qcamera):
     cam_status = oc_qcamera.status()
     if cam_status != QCamera.UnloadedStatus:
         print("ERROR: unexpected camera status: %s" % status2str(cam_status))
@@ -71,7 +72,7 @@ def camera_sync_load_and_start(oc_qcamera):
 #
 
 
-def camera_sync_stop_and_unload(oc_qcamera):
+def _camera_sync_stop_and_unload(oc_qcamera):
     cam_status = oc_qcamera.status()
     if cam_status != QCamera.ActiveStatus:
         print("ERROR: unexpected camera status: %s" % status2str(cam_status))
@@ -310,17 +311,7 @@ class CMainWindow(QtWidgets.QWidget):
                     self.l_wins.append(CSillyCameraPreviewWindow())
 
                 else:
-                    # TODO FIXME shall we move this into the CSmartCameraPreviewWindow's constructor?
-                    oc_cam = QCamera(oc_cam_info)
-                    camera_sync_load_and_start(oc_cam)
-                    l_resolutions = oc_cam.supportedViewfinderResolutions()
-                    l_frate_ranges = oc_cam.supportedViewfinderFrameRateRanges()
-                    camera_sync_stop_and_unload(oc_cam)
-                    del oc_cam
-
-                    if len(l_frate_ranges) == 0 or len(l_resolutions) == 0:
-                        raise RuntimeError("The camera (%s) does not support frame rate/resolution information retrieval" % s_cam_descr)
-                    self.l_wins.append(CSmartCameraPreviewWindow(l_frate_ranges, l_resolutions))
+                    self.l_wins.append(CSmartCameraPreviewWindow(oc_cam_info))
                 # ------------------------------------------------------------
             else:
                 self.l_wins.append(None)
@@ -407,8 +398,22 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
 
 
 class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, l_frate_ranges, l_resolutions, *args, **kwargs):
+    def __init__(self, oc_cam_info, *args, **kwargs):
         super(CSmartCameraPreviewWindow, self).__init__(*args, **kwargs)
+        s_cam_descr = oc_cam_info.description()
+
+        oc_cam = QCamera(oc_cam_info)
+
+        _camera_sync_load_and_start(oc_cam)
+        l_resolutions = oc_cam.supportedViewfinderResolutions()
+        l_frate_ranges = oc_cam.supportedViewfinderFrameRateRanges()
+        _camera_sync_stop_and_unload(oc_cam)
+
+        del oc_cam
+
+        if len(l_frate_ranges) == 0 or len(l_resolutions) == 0:
+            raise RuntimeError("The camera (%s) does not support frame rate/resolution information retrieval" % s_cam_descr)
+
         self.b_startup_guard = False
         self.toolbar = QtWidgets.QToolBar("Preview")
 
