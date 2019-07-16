@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import configparser
 
 import PyQt5 # hint for pyinstaller
 from PyQt5 import QtGui
@@ -223,6 +224,26 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_frame_cap_thread = None
         self.l_wins = []
 
+        s_config_fname = "mstools.ini" # TODO hard-coded for now.
+        if not os.path.isfile(s_config_fname):
+            raise OSError("Not a regular file: %s" % s_config_fname)
+        if not os.access(s_config_fname, os.R_OK):
+            raise OSError("Access denied for file: %s" % s_config_fname)
+
+        # load global configuration file
+        self.oc_global_cfg = configparser.ConfigParser()
+        self.oc_global_cfg.read(s_config_fname)
+
+        self.s_data_root_dir = self.oc_global_cfg['general']['data_root_dir']
+        self.s_data_root_dir = self.s_data_root_dir.strip()
+
+        if not os.path.isdir(self.s_data_root_dir):
+            os.mkdir(self.s_data_root_dir)
+        if not os.path.isdir(self.s_data_root_dir):
+            raise OSError("Not a directory: %s" % self.s_data_root_dir)
+        if not os.access(self.s_data_root_dir, os.R_OK):
+            raise OSError("Access denied for directory: %s" % self.s_data_root_dir)
+
         # check if we have any cameras before doing anything else
         self.l_caminfos = QCameraInfo.availableCameras()
         if len(self.l_caminfos) == 0:
@@ -340,7 +361,7 @@ class CMainWindow(QtWidgets.QWidget):
             # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
             # Implement frame time stamp storage in the COpenCVmultiFrameCapThread.
             # In order to be able to start recording here we also need file name prefixes
-            # and path to directory where the data will be stored.
+            # so it might be better to add one column "Output File Name Prefix" into the self.oc_vsrc_table
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Estimate amount of dropped frames and implement correspondent counters.
