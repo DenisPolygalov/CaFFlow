@@ -32,6 +32,7 @@ def write_single_session(oc_vcap, oc_writer, i_nframes_max):
         b_ret, na_frame = oc_vcap.read()
 
         if b_ret:
+            # flips the camera so that image is upside down
             na_frame = cv.flip(na_frame, 0)
             oc_writer.write_next_frame(na_frame)
             cv.imshow('frame', na_frame)
@@ -39,9 +40,11 @@ def write_single_session(oc_vcap, oc_writer, i_nframes_max):
 
             if i_frame_cnt % 10 == 0:
                 print("Captured/written %i frames out of %i" % (i_frame_cnt, i_nframes_max))
+
+            # breaks once maximum frame number is reached
             if i_frame_cnt >= i_nframes_max: break
 
-            if cv.waitKey(1) & 0xFF == ord('q'):
+            if cv.waitKey(1) & 0xFF == ord('q'):  # TODO does not work with MacOS
                break
         else:
             raise RuntimeError("Unable to read frame from video capturing device")

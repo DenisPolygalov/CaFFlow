@@ -28,6 +28,23 @@ http://www.fsf.org/
 """
 
 
+"""
+*ABOUT THIS FILE*
+
+The final product of this file is 2 videos of a mouse (LED light)
+moving in a linear track playing side by side, one without processing,
+and one with a white cross showing the position (pixel number) of the
+mouse at each frame.
+
+When the video is closed, an additional graph is made using the x and y
+coordinates of the white cross seen in the video (the position of the
+mouse per frame number).
+
+This can be generalised with any video of a mouse moving with a clearly
+visible LED light which can be tracked.
+"""
+
+
 class CSideBySidePlayer(object):
     def __init__(self, fig_size=(15,5), desired_fps=60):
         self.fig = plt.figure(figsize=fig_size)
@@ -66,20 +83,30 @@ class CSideBySidePlayer(object):
         sys.stdout.flush()
 
     def set_Lframe_data(self, na_frame):
+        """
+        Sets the image to be shown on the left frame
+        :param na_frame: image
+        :return: no return, changes self.imgL
+        """
         if self.imgL == None:
             self.imgL = self.axL.imshow(na_frame)
         else:
             self.imgL.set_data(na_frame)
 
     def set_Rframe_data(self, na_frame):
+        """
+        Sets the image to be shown on the right frame
+        :param na_frame: image
+        :return: no return, changes self.imgR
+        """
         if self.imgR == None:
             self.imgR = self.axR.imshow(na_frame)
         else:
             self.imgR.set_data(na_frame)
 
-    def set_data(self, na_Lframe, na_Rframe):
-        self.set_Lframe_data(na_Lframe)
-        self.set_Rframe_data(na_Rframe)
+    # def set_data(self, na_Lframe, na_Rframe):  # commented out because same matplotlib function name
+    #     self.set_Lframe_data(na_Lframe)
+    #     self.set_Rframe_data(na_Rframe)
 
     def drawait(self):
         self.fig.canvas.draw_idle()
@@ -92,6 +119,7 @@ class CSideBySidePlayer(object):
 
 
 def main():
+    # file in "examples" folder
     t_input_files = ("CW2003_H14_M57_S54_behavCam1_frame0to179.avi",) # notice the comma
 
     # load local configuration file
@@ -110,7 +138,10 @@ def main():
 
     i_frame_id = 0
     while(oc_movie.read_next_frame()):
+        # makes a copy of the frame, which it will modify by drawing a cross on it
         na_frame_out = oc_movie.na_frame.copy()
+
+        # prints detection success rate every 10 frames
         if i_frame_id % 10 == 0: print("Detection success rate: %.2f" % oc_pos_det.get_success_rate())
 
         # draw a cross at coordinates of LED directly onto na_frame_out
@@ -132,6 +163,7 @@ def main():
     ax.plot(np.array(oc_pos_det.l_position))
     plt.xlabel("Frame #")
     plt.ylabel("Animal's position (X,Y)")
+    plt.legend(("X", "Y"))
     plt.show()
 #
 

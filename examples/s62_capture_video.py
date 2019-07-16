@@ -26,6 +26,18 @@ http://www.fsf.org/
 """
 
 
+"""
+*ABOUT THIS FILE*
+
+Records a video from computer camera (which is flipped upside down)
+and is compressed by FFV1 (lossless).
+
+Note: please check that it is compressed in this way by checking
+on the video file made called captured_lossless_video.avi which will
+be created in the 'examples' folder.
+"""
+
+
 def main():
     f_fps_desired = 20.0
     i_nframes_max = 200
@@ -50,6 +62,7 @@ def main():
             print("Enforcing FPS filed! Try anyway...")
             f_fps = f_fps_desired
 
+    # writes video into file by FFV1
     oc_fourcc = cv.VideoWriter_fourcc(*'FFV1')
     oc_video_writer = cv.VideoWriter(s_fname_out, oc_fourcc, f_fps, (i_frame_w, i_frame_h))
     print("If you see 'FFMPEG tag ... is not found' error message ABOVE, then your OS is missing FFMPEG encoding support.")
@@ -59,6 +72,8 @@ def main():
         b_ret, na_frame = oc_vcap.read()
 
         if b_ret:
+            # flips the camera so that image is upside down
+            # this is an example of what manipulation can be done in real time
             na_frame = cv.flip(na_frame, 0)
             oc_video_writer.write(na_frame)
 
