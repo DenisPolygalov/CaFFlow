@@ -27,12 +27,18 @@ http://www.fsf.org/
 
 
 def main():
+    """
+    Loads the .dat files
+    (settings_and_notes.dat and timestamp.dat)
+    then prints relevant information using classes
+    and functions imported from mendouscopy.
+    """
     # instantiate (create) an object of class CDatContainer
     oc_dat_container = CDatContainer(".")
-
     for s_key in oc_dat_container.d_DAT.keys():
         DVAR(oc_dat_container.d_DAT[s_key], s_var_name=s_key)
-
+    # prints a sample of the frame information
+    # (for the first 5 frames)
     for i in range(10):
         print(oc_dat_container.d_DAT['camNum'][i],
             oc_dat_container.d_DAT['frameNum'][i],

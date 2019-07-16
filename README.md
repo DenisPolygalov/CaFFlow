@@ -1,6 +1,6 @@
 # CaFFlow
 
-CaFFlow is a Python framework for acquisition and analyzing of single-,
+CaFFlow is a Python framework for acquisition and analysis of single-,
 two-photon calcium imaging and experimental animal's behavior data.
 This project is intended to be used for acquisition of video data stream(s) generated
 by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subsequent
@@ -8,7 +8,7 @@ by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subse
 Practically however, it can be used for processing of wider range of frame streams,
 such as animal's behavior only, batch image/video editing etc.
 
-**This repository is currently _under_ _development_. Code contributions and bug reports are welcome.**
+**This repository is currently _under_  _development_. Code contributions and bug reports are welcome.**
 
 ### Repository layout
 
@@ -16,8 +16,8 @@ CaFFlow consist of two main parts - framework-side and user-side scripts.
 The framework-side part is a self-contained set of Python classes/functions representing
 building blocks common for all recordings/experiments conducted in a Lab.
 The user-side part is a set of Python scripts adapted for each experiment.
-The framework is extended by developer(s), never changed by user(s),
-have strict set of external dependencies and guarantied backward compatibility.
+The framework is extended by developer(s), and never changed by user(s);
+it has a strict set of external dependencies and guarantied backward compatibility.
 
 
 - __examples__ - examples of the user-side scripts. Each script demonstrate usage of particular set of features provided by the mendouscopy framework.
@@ -36,12 +36,17 @@ have strict set of external dependencies and guarantied backward compatibility.
 
 __FIXME: this is short description for those who already familiar with Python/Conda.__
 
-Download and install some sort of command line interface based `git` client, such as
-[Git for Windows](https://git-scm.com/download/win) if you don't have it installed already.
+Download and install a command line interface based `git` client, such as
+[Git for Windows](https://git-scm.com/download/win) if you do not already have it installed.
 
 Launch the `git` client and install/activate [Git Large File Storage](https://git-lfs.github.com/) extension:
 
 `$ git lfs install`
+
+_MacOS:_
+
+- _if you use Homebrew, run `$ brew install git-lfs`_
+- _if you use MacPorts, run `$ port install git-lfs`_
 
 Change directory `(cd)` to the place where you plan to keep CaFFlow and clone this repository:
 
@@ -51,9 +56,13 @@ Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 
 Launch Miniconda command line prompt. Create and activate new environment:
 
+_MacOS: `source activate` (must activate conda first)_
+
 `(base)> conda create -n cafflow`
 
 `(base)> activate cafflow`
+
+_MacOS:  `(base)> source activate cafflow` or  `(base)> conda activate cafflow`_
 
 `(cafflow)>`
 

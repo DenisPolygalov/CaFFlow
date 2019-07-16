@@ -27,6 +27,16 @@ http://www.fsf.org/
 """
 
 
+"""
+* ABOUT THIS FILE *
+
+Shows the sample images (video frames) in file
+CW2003_H14_M57_S54_msCam1_frame0to99.tiff
+where the frames can be changed interactively
+(can go to *next* and *previous* frames).
+"""
+
+
 def main():
     # make a tuple of strings - input file names
     t_input_files = ("CW2003_H14_M57_S54_msCam1_frame0to99.tiff",) # notice comma(!)
