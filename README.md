@@ -61,6 +61,7 @@ _MacOS: `source activate` (must activate conda first)_
 `(base)> conda create -n cafflow`
 
 `(base)> activate cafflow`
+
 _MacOS:  `(base)> source activate cafflow` or  `(base)> conda activate cafflow`_
 
 `(cafflow)>`
