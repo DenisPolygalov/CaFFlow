@@ -80,11 +80,27 @@ For GUI-based applications - install PyQt package:
 `(cafflow)> conda install pyqt`
 
 For video encoding support the lossless video codec (FFV1)
-must be installed and registered globally, at your OS level
-(i.e. as a COM DLL in the case of Windows).
-There are multiple ways of doing this. __FIXME: extend this__
+must be installed and registered globally, at your operating system level
+(i.e. as a COM DLL in the case of Windows). First of all it is necessary
+to check if you have FFV1 video encoding support already available on your
+PC (installed for example by a third-party application) or not.
+In order to do so run the `examples/XX_capture_video.py` script and
+examine it's output. The script will try to capture a chunk of video
+stream from default video camera (must be connected in advance obviously),
+encode the video by using FFV1 codec and write encoded video 
+into a file called *'captured_lossless_video.avi'* located in the same directory.
+If the file was created, have non-zero size and you can play it's content
+by using common video-player software then you have FFV1 support already installed.
+If the file is broken or not created at all you can try to install 
+[LAV Filters](https://github.com/Nevcairiel/LAVFilters) - 
+Open-Source DirectShow Media Splitter and Decoders binary package
+for Windows** 
+from [here](https://github.com/Nevcairiel/LAVFilters/releases)
+, then restart your PC and repeat the test.
 
-Test your Python environment:
+** Installing FFV1 video encoding support for other OSes is outside of the scope of this project.
+
+The next step is to test your Python environment:
 
 `(cafflow)> cd CaFFlow`
 
