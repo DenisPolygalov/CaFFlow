@@ -223,6 +223,7 @@ class CMainWindow(QtWidgets.QWidget):
         super(CMainWindow, self).__init__(*args, **kwargs)
         self.oc_frame_cap_thread = None
         self.l_wins = []
+        self.b_behavCamFound = False
 
         s_config_fname = "mstools.ini" # TODO hard-coded for now.
         if not os.path.isfile(s_config_fname):
@@ -251,12 +252,13 @@ class CMainWindow(QtWidgets.QWidget):
 
         self.oc_vsrc_table = QtWidgets.QTableWidget()
         self.oc_vsrc_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
-        self.oc_vsrc_table.setItemDelegate(CTableItemDelegate(self))
         self.oc_vsrc_table.horizontalHeader().setDefaultSectionSize(90)
-        self.oc_vsrc_table.setColumnCount(2)
-        self.oc_vsrc_table.setHorizontalHeaderLabels(("Video Source", "Status"))
+        self.oc_vsrc_table.setColumnCount(3)
+        self.oc_vsrc_table.setItemDelegateForColumn(2, CTableItemDelegate(self))
+        self.oc_vsrc_table.setHorizontalHeaderLabels(("Video Source", "Output File Prefix", "Status"))
         self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
         self.oc_vsrc_table.verticalHeader().hide()
 
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
@@ -287,11 +289,31 @@ class CMainWindow(QtWidgets.QWidget):
     def __add_row(self, s_vsrc_name):
         i_nrows = self.oc_vsrc_table.rowCount()
         self.oc_vsrc_table.setRowCount(i_nrows + 1)
+
         item0 = QtWidgets.QTableWidgetItem(s_vsrc_name)
-        item1 = QtWidgets.QTableWidgetItem("disabled")
+        item0.setFlags(item0.flags() & ~QtCore.Qt.ItemIsEditable)
+
+        if s_vsrc_name.find("MINISCOPE") >= 0 or s_vsrc_name.find("C310") >= 0:
+            item1 = QtWidgets.QTableWidgetItem("msCam")
+        elif not self.b_behavCamFound:
+            item1 = QtWidgets.QTableWidgetItem("behavCam")
+            self.b_behavCamFound = True
+        else:
+            item1 = QtWidgets.QTableWidgetItem("viCam%s" % self.__int2ABC(i_nrows + 1))
+
+        item2 = QtWidgets.QTableWidgetItem("disabled")
+
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
-        self.oc_vsrc_table.openPersistentEditor(item1)
+        self.oc_vsrc_table.setItem(i_nrows, 2, item2)
+        self.oc_vsrc_table.openPersistentEditor(item2)
+
+    def __int2ABC(self, i_idx):
+        # convert 12433 (integer) into 'ABDCC' (string)
+        l_out = []
+        for _, ch in enumerate(str(i_idx)):
+            l_out.append(chr(int(ch)+64))
+        return "".join(l_out)
 
     def __cb_on_btn_preview(self):
         i_ncols = self.oc_vsrc_table.columnCount()
@@ -303,8 +325,8 @@ class CMainWindow(QtWidgets.QWidget):
 
         l_do_capture = []
         for i_row_id in range(self.oc_vsrc_table.rowCount()):
-            item1 = self.oc_vsrc_table.item(i_row_id, 1)
-            if item1.text() == "ENABLED":
+            item2 = self.oc_vsrc_table.item(i_row_id, 2)
+            if item2.text() == "ENABLED":
                 l_do_capture.append(True)
             else:
                 l_do_capture.append(False)
@@ -353,6 +375,7 @@ class CMainWindow(QtWidgets.QWidget):
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
             d_vstream_info = oc_win.get_vstream_info()
+            d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
             print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
             # TODO:
             # Check if all cameras have equal frame rates.
@@ -360,8 +383,6 @@ class CMainWindow(QtWidgets.QWidget):
             # or synchronize all cameras to maser one here if possible.
             # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
             # Implement frame time stamp storage in the COpenCVmultiFrameCapThread.
-            # In order to be able to start recording here we also need file name prefixes
-            # so it might be better to add one column "Output File Name Prefix" into the self.oc_vsrc_table
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Estimate amount of dropped frames and implement correspondent counters.
