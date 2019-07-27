@@ -253,12 +253,13 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_vsrc_table = QtWidgets.QTableWidget()
         self.oc_vsrc_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
         self.oc_vsrc_table.horizontalHeader().setDefaultSectionSize(90)
-        self.oc_vsrc_table.setColumnCount(3)
+        self.oc_vsrc_table.setColumnCount(4)
         self.oc_vsrc_table.setItemDelegateForColumn(2, CTableItemDelegate(self))
-        self.oc_vsrc_table.setHorizontalHeaderLabels(("Video Source", "Output File Prefix", "Status"))
+        self.oc_vsrc_table.setHorizontalHeaderLabels(("Video Source", "Output File Prefix", "Status", "Master"))
         self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(2, QtWidgets.QHeaderView.Fixed)
+        self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(3, QtWidgets.QHeaderView.Fixed)
         self.oc_vsrc_table.verticalHeader().hide()
 
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
@@ -302,10 +303,14 @@ class CMainWindow(QtWidgets.QWidget):
             item1 = QtWidgets.QTableWidgetItem("viCam%s" % self.__int2ABC(i_nrows + 1))
 
         item2 = QtWidgets.QTableWidgetItem("disabled")
+        item3 = QtWidgets.QTableWidgetItem()
+        item3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+        item3.setCheckState(QtCore.Qt.Unchecked)
 
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
         self.oc_vsrc_table.setItem(i_nrows, 2, item2)
+        self.oc_vsrc_table.setItem(i_nrows, 3, item3)
         self.oc_vsrc_table.openPersistentEditor(item2)
 
     def __int2ABC(self, i_idx):
@@ -324,6 +329,7 @@ class CMainWindow(QtWidgets.QWidget):
             raise RuntimeError("Preallocated thread detected!")
 
         l_do_capture = []
+        l_is_master = []
         for i_row_id in range(self.oc_vsrc_table.rowCount()):
             item2 = self.oc_vsrc_table.item(i_row_id, 2)
             if item2.text() == "ENABLED":
@@ -331,10 +337,32 @@ class CMainWindow(QtWidgets.QWidget):
             else:
                 l_do_capture.append(False)
 
+            item3 = self.oc_vsrc_table.item(i_row_id, 3)
+            if item3.checkState() == QtCore.Qt.Checked:
+                l_is_master.append(True)
+            else:
+                l_is_master.append(False)
+
+        if self.oc_vsrc_table.rowCount() == 1:
+            item3 = self.oc_vsrc_table.item(0, 3)
+            item3.setCheckState(QtCore.Qt.Checked)
+            l_is_master[0] = True
+
         if not any(item == True for item in l_do_capture):
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
                 "No video source enabled.\nSet the 'Status' to 'ENABLE' for at least one video source.")
             return
+
+        if sum(l_is_master) > 1:
+            QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
+                "Multiple video sources set as master.\nCheck the 'Master' for only single video source.")
+            return
+
+        for i_idx, b_is_master in enumerate(l_is_master):
+            if b_is_master and not l_do_capture[i_idx]:
+                QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
+                "The Master video source is not enabled.\nSet the 'Status' of the Master video source to 'ENABLE'.")
+                return
 
         self.btn_preview.setEnabled(False)
         self.oc_vsrc_table.setEnabled(False)
