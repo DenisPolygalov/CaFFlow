@@ -305,7 +305,11 @@ class CMainWindow(QtWidgets.QWidget):
         item2 = QtWidgets.QTableWidgetItem("disabled")
         item3 = QtWidgets.QTableWidgetItem()
         item3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-        item3.setCheckState(QtCore.Qt.Unchecked)
+
+        if s_vsrc_name.find("MINISCOPE") >= 0 or s_vsrc_name.find("C310") >= 0:
+            item3.setCheckState(QtCore.Qt.Checked)
+        else:
+            item3.setCheckState(QtCore.Qt.Unchecked)
 
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
@@ -358,6 +362,11 @@ class CMainWindow(QtWidgets.QWidget):
                 "Multiple video sources set as master.\nCheck the 'Master' for only single video source.")
             return
 
+        if len(l_is_master) > 1 and sum(l_is_master) == 0:
+            QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
+                "Multiple video sources without master.\nCheck the 'Master' for at least one video source.")
+            return
+
         for i_idx, b_is_master in enumerate(l_is_master):
             if b_is_master and not l_do_capture[i_idx]:
                 QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
@@ -373,16 +382,16 @@ class CMainWindow(QtWidgets.QWidget):
 
                 # >>> window type selection depend on the present hardware <<<
                 if s_cam_descr.find("MINISCOPE") >= 0:
-                    self.l_wins.append(CMiniScopePreviewWindow())
+                    self.l_wins.append(CMiniScopePreviewWindow(b_is_master=l_is_master[i_idx]))
 
                 elif s_cam_descr.find("C310") >= 0:
-                    self.l_wins.append(CMiniScopePreviewWindow(b_emulation_mode=True))
+                    self.l_wins.append(CMiniScopePreviewWindow(b_is_master=l_is_master[i_idx], b_emulation_mode=True))
 
                 elif s_cam_descr.find("Tape Recorder") >= 0:
-                    self.l_wins.append(CSillyCameraPreviewWindow())
+                    self.l_wins.append(CSillyCameraPreviewWindow(b_is_master=l_is_master[i_idx]))
 
                 else:
-                    self.l_wins.append(CSmartCameraPreviewWindow(oc_cam_info))
+                    self.l_wins.append(CSmartCameraPreviewWindow(oc_cam_info, b_is_master=l_is_master[i_idx]))
                 # ------------------------------------------------------------
             else:
                 self.l_wins.append(None)
@@ -400,10 +409,14 @@ class CMainWindow(QtWidgets.QWidget):
 
     def __cb_on_btn_record(self):
         self.btn_record.setEnabled(False)
+        l_FPS = []
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
             d_vstream_info = oc_win.get_vstream_info()
+            # WARNING: here we modify the dictionary returned by the get_vstream_info()
+            # method above by ADDING additional key/value pairs.
             d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
+            l_FPS.append(d_vstream_info['FPS'])
             print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
             # TODO:
             # Check if all cameras have equal frame rates.
@@ -414,6 +427,12 @@ class CMainWindow(QtWidgets.QWidget):
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Estimate amount of dropped frames and implement correspondent counters.
+
+        if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
+            QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
+                "Unequal frame rate values detected within enabled video sources.\nRecording aborted.")
+            self.btn_record.setEnabled(True)
+            return
 
     def __cb_on_btn_stop(self):
         self.__interrupt_threads_gracefully()

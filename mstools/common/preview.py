@@ -228,7 +228,7 @@ class CNdarrayPreviewWidget(QtWidgets.QWidget):
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
 
-    def __init__(self, *args, b_enable_close_button=False, **kwargs):
+    def __init__(self, *args, b_is_master=False, b_enable_close_button=False, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
@@ -237,6 +237,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.oc_camera_info = None
         self.__frame_cap_thread = None
         self.__oc_canvas = None
+        self.b_is_master = b_is_master
 
         # bottom status bar
         self.sbar = QtWidgets.QStatusBar(self)
@@ -276,6 +277,10 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         d_vstream_info['FPS'] = self.get_cap_prop(cv.CAP_PROP_FPS)
         d_vstream_info['FRAME_WIDTH'] = self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH)
         d_vstream_info['FRAME_HEIGHT'] = self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT)
+        if self.b_is_master:
+            d_vstream_info['IS_MASTER'] = 1
+        else:
+            d_vstream_info['IS_MASTER'] = 0
         return d_vstream_info
 
     def update_cap_prop(self, i_prop_id, prop_new_val):
