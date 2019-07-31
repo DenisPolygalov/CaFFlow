@@ -39,14 +39,20 @@ __FIXME: this is short description for those who already familiar with Python/Co
 Download and install a command line interface based `git` client, such as
 [Git for Windows](https://git-scm.com/download/win) if you do not already have it installed.
 
-Launch the `git` client and install/activate [Git Large File Storage](https://git-lfs.github.com/) extension:
+Install/activate [Git Large File Storage](https://git-lfs.github.com/) extension.
 
-`$ git lfs install`
+_Windows:_
+
+- launch the `git` client application and run: `$ git lfs install`
 
 _MacOS:_
 
-- _if you use Homebrew, run `$ brew install git-lfs`_
-- _if you use MacPorts, run `$ port install git-lfs`_
+- if you use Homebrew, open terminal and run: `$ brew install git-lfs`
+- if you use MacPorts, open terminal and run: `$ port install git-lfs`
+
+_FreeBSD:_
+
+- Open terminal and run: `$ pkg install git-lfs && git lfs install`
 
 Change directory `(cd)` to the place where you plan to keep CaFFlow and clone this repository:
 
@@ -54,19 +60,27 @@ Change directory `(cd)` to the place where you plan to keep CaFFlow and clone th
 
 Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't have it installed already.
 
-Launch Miniconda command line prompt. Create and activate new environment:
+Create and activate new 'Conda environment':
 
-_MacOS: `source activate` (must activate conda first)_
+_Windows:_
+
+Launch 'Anaconda Prompt' from Windows Start Menu and type:
 
 `(base)> conda create -n cafflow`
 
-`(base)> activate cafflow`
+`(base)> conda activate cafflow`
 
-_MacOS:  `(base)> source activate cafflow` or  `(base)> conda activate cafflow`_
+_MacOS:_
 
-`(cafflow)>`
+Launch the 'Terminal' application and type:
 
-Install necessary Python packages:
+`$ source miniconda3/bin/activate`
+
+`(base)$ conda create -n cafflow`
+
+`(base)$ source activate cafflow`
+
+Install necessary Python packages (the command syntax is common across Windows/MacOS/FreeBSD):
 
 `(cafflow)> conda install opencv numpy pandas scipy scikit-image`
 
@@ -79,13 +93,18 @@ For GUI-based applications - install PyQt package:
 
 `(cafflow)> conda install pyqt`
 
-For video encoding support the lossless video codec (FFV1)
+For video encoding/decoding support the lossless video codec (FFV1)
 must be installed and registered globally, at your operating system level
 (i.e. as a COM DLL in the case of Windows). First of all it is necessary
-to check if you have FFV1 video encoding support already available on your
+to check if you have the FFV1 video encoding support already available on your
 PC (installed for example by a third-party application) or not.
-In order to do so run the `examples/XX_capture_video.py` script and
-examine it's output. The script will try to capture a chunk of video
+In order to do so run the `examples/sXX_capture_video.py` script:
+
+`(cafflow)> cd CaFFlow\examples`
+
+`(cafflow)> python sXX_capture_video.py`
+
+and examine it's output. The script will try to capture a chunk of video
 stream from default video camera (must be connected in advance obviously),
 encode the video by using FFV1 codec and write encoded video 
 into a file called *'captured_lossless_video.avi'* located in the same directory.
