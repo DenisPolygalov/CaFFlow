@@ -18,7 +18,6 @@ import cv2 as cv
 from common.widgets import CLabeledComboBox
 from common.widgets import CLabeledSpinSlider
 from common.preview import COpenCVPreviewWindow
-from common.capture import COpenCVframeCaptureThread
 
 
 """
@@ -102,7 +101,7 @@ def _camera_sync_stop_and_unload(oc_qcamera):
                 sys.exit(-1)
 #
 
-
+# TODO: move this class into the 'common.capture'?
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 
@@ -110,10 +109,12 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.t_do_capture = tuple(l_do_capture) # freeze it to prevent changes from outside
         self.b_running = False
+        self.b_recording = False
         self.l_cams = []
         self.l_frames = []
         self.l_frame_hwc = [] # list of len() == 3 tuples of frame HEIGHT x WIDTH x COLORS
         self.i_frame_id = -1 # so valid frame numbers will start from zero
+        self.l_video_writers = []
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
@@ -141,6 +142,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.b_running = True
         while self.b_running:
             if self.isInterruptionRequested():
+                self.b_recording = False
                 self.b_running = False
                 break
 
@@ -159,12 +161,18 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                         # seems like this happen inevitably during frame rate/size change events
                         raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
 
+            # write acquired frames into files
+            for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+                if b_do_cap and self.b_recording:
+                    self.l_video_writers[i_cam_idx].write_next_frame(self.l_frames[i_cam_idx])
+
             self.i_frame_id += 1
             self.frameReady.emit('frameReady') # argument doesn't matter
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 self.l_cams[i_cam_idx].release()
+                self.l_video_writers[i_cam_idx].close()
 
     def __check_cam_or_die(self, i_cam_id):
         if i_cam_id < 0 or i_cam_id >= len(self.l_cams):
@@ -186,6 +194,47 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
     def get_frame(self, i_cam_id):
         self.__check_cam_or_die(i_cam_id)
         return self.l_frames[i_cam_id]
+
+    def start_recording(self, d_rec_info):
+        s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
+        l_vstream_list  = d_rec_info['VSTREAM_LIST']
+        if len(l_vstream_list) != len(self.l_cams):
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        i_idx_master = -1
+        for i_idx, d_vstream_info in enumerate(l_vstream_list):
+            if d_vstream_info['IS_MASTER'] == 1:
+                i_idx_master = i_idx
+                break
+        if i_idx_master == -1:
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        oc_master_writer = CMuPaVideoWriter(
+            s_data_root_dir,
+            l_vstream_list[i_idx_master]['OUTPUT_FILE_PREFIX'],
+            l_vstream_list[i_idx_master]['FPS'],
+            l_vstream_list[i_idx_master]['FRAME_WIDTH'],
+            l_vstream_list[i_idx_master]['FRAME_HEIGHT']
+        )
+
+        for i_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                if i_idx == i_idx_master:
+                    self.l_video_writers.append(oc_master_writer)
+                    continue
+                self.l_video_writers.append(
+                    CMuPaVideoWriter(
+                        s_data_root_dir,
+                        l_vstream_list[i_idx]['OUTPUT_FILE_PREFIX'],
+                        l_vstream_list[i_idx]['FPS'],
+                        l_vstream_list[i_idx]['FRAME_WIDTH'],
+                        l_vstream_list[i_idx]['FRAME_HEIGHT'],
+                        master=oc_master_writer
+                    )
+                )
+            else:
+                self.l_video_writers.append(None) # *** WATCH OUT ***
+        self.b_recording = True
     #
 #
 
@@ -263,7 +312,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_vsrc_table.verticalHeader().hide()
 
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
-            self.__add_row(oc_cam_info.description())
+            self.__add_new_row_to_vsrc_table(oc_cam_info.description())
         self.oc_vsrc_table.resizeColumnsToContents()
 
         self.btn_preview = QtWidgets.QPushButton("PREVIEW")
@@ -287,35 +336,33 @@ class CMainWindow(QtWidgets.QWidget):
         self.setMinimumWidth(500)
         self.setWindowTitle("Video Source Manager")
 
-    def __add_row(self, s_vsrc_name):
+    def __add_new_row_to_vsrc_table(self, s_vsrc_name):
         i_nrows = self.oc_vsrc_table.rowCount()
         self.oc_vsrc_table.setRowCount(i_nrows + 1)
 
         item0 = QtWidgets.QTableWidgetItem(s_vsrc_name)
         item0.setFlags(item0.flags() & ~QtCore.Qt.ItemIsEditable)
-
-        if s_vsrc_name.find("MINISCOPE") >= 0 or s_vsrc_name.find("C310") >= 0:
-            item1 = QtWidgets.QTableWidgetItem("msCam")
-        elif not self.b_behavCamFound:
-            item1 = QtWidgets.QTableWidgetItem("behavCam")
-            self.b_behavCamFound = True
-        else:
-            item1 = QtWidgets.QTableWidgetItem("viCam%s" % self.__int2ABC(i_nrows + 1))
-
+        item1 = QtWidgets.QTableWidgetItem()
         item2 = QtWidgets.QTableWidgetItem("disabled")
         item3 = QtWidgets.QTableWidgetItem()
         item3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
 
         if s_vsrc_name.find("MINISCOPE") >= 0 or s_vsrc_name.find("C310") >= 0:
+            item1.setText("msCam")
             item3.setCheckState(QtCore.Qt.Checked)
+        elif not self.b_behavCamFound:
+            self.b_behavCamFound = True
+            item1.setText("behavCam")
+            item3.setCheckState(QtCore.Qt.Unchecked)
         else:
+            item1.setText("viCam%s" % self.__int2ABC(i_nrows + 1))
             item3.setCheckState(QtCore.Qt.Unchecked)
 
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
         self.oc_vsrc_table.setItem(i_nrows, 2, item2)
-        self.oc_vsrc_table.setItem(i_nrows, 3, item3)
         self.oc_vsrc_table.openPersistentEditor(item2)
+        self.oc_vsrc_table.setItem(i_nrows, 3, item3)
 
     def __int2ABC(self, i_idx):
         # convert 12433 (integer) into 'ABDCC' (string)
@@ -410,16 +457,22 @@ class CMainWindow(QtWidgets.QWidget):
     def __cb_on_btn_record(self):
         self.btn_record.setEnabled(False)
         l_FPS = []
+        l_vstream_list = []
+        # WARNING: the len(self.l_wins) is ALWAYS equal to the number of cameras
+        # For 'disabled' cameras however, the self.l_wins contain None values.
+        # Here we use the same approach to fill the l_vstream_list
         for i_idx, oc_win in enumerate(self.l_wins):
-            if oc_win == None: continue
+            if oc_win == None:
+                l_vstream_list.append(None) # *** WATCH OUT ***
+                continue
             d_vstream_info = oc_win.get_vstream_info()
             # WARNING: here we modify the dictionary returned by the get_vstream_info()
             # method above by ADDING additional key/value pairs.
             d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
             l_FPS.append(d_vstream_info['FPS'])
-            print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
+            l_vstream_list.append(d_vstream_info)
+            # print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
             # TODO:
-            # Check if all cameras have equal frame rates.
             # Warn user to change the frame rate values to all equal
             # or synchronize all cameras to maser one here if possible.
             # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
@@ -433,6 +486,14 @@ class CMainWindow(QtWidgets.QWidget):
                 "Unequal frame rate values detected within enabled video sources.\nRecording aborted.")
             self.btn_record.setEnabled(True)
             return
+
+        if self.oc_frame_cap_thread == None:
+            raise RuntimeError("Unallocated thread detected!")
+
+        d_rec_info = {}
+        d_rec_info['DATA_ROOT_DIR'] = self.s_data_root_dir
+        d_rec_info['VSTREAM_LIST'] = l_vstream_list
+        self.oc_frame_cap_thread.start_recording(d_rec_info)
 
     def __cb_on_btn_stop(self):
         self.__interrupt_threads_gracefully()
