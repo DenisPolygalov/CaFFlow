@@ -85,21 +85,19 @@ class CMainWindow(QtWidgets.QWidget):
 
         # >>> window type selection depend on the present hardware <<<
         if s_cam_descr.find("MINISCOPE") >= 0:
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = CMiniScopePreviewWindow()
 
         elif s_cam_descr.find("C310") >= 0:
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = CMiniScopePreviewWindow(b_emulation_mode=True)
 
         elif s_cam_descr.find("Tape Recorder") >= 0:
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx)
             self.win_preview = COpenCVPreviewWindow()
 
         else:
             self.win_preview = CQCameraPreviewWindow()
         # ------------------------------------------------------------
 
+        self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
         self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)
         self.win_preview.show()
         self.win_preview.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)

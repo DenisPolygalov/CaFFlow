@@ -191,7 +191,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.__check_cam_or_die(i_cam_id)
         return self.l_cams[i_cam_id].get(i_prop_id)
 
-    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
+    def update_prop_sync(self, i_cam_id, i_prop_id, prop_new_val):
         self.__check_cam_or_die(i_cam_id)
         prop_old = self.l_cams[i_cam_id].get(i_prop_id)
         self.l_cams[i_cam_id].set(i_prop_id, prop_new_val)
@@ -599,14 +599,14 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         if self.b_startup_guard: return
         l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
         i_w, i_h = int(l_res[0]), int(l_res[1])
-        self.update_cap_prop_async(cv.CAP_PROP_FRAME_WIDTH, i_w)
-        self.update_cap_prop_async(cv.CAP_PROP_FRAME_HEIGHT, i_h)
+        self.update_cap_prop(cv.CAP_PROP_FRAME_WIDTH,  i_w, b_async_call=True)
+        self.update_cap_prop(cv.CAP_PROP_FRAME_HEIGHT, i_h, b_async_call=True)
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
         if not self.is_started(): return
         if self.b_startup_guard: return
         f_cam_fps = float(self.cbox_frame_rate.cbox.itemText(i_idx))
-        self.update_cap_prop_async(cv.CAP_PROP_FPS, f_cam_fps)
+        self.update_cap_prop(cv.CAP_PROP_FPS, f_cam_fps, b_async_call=True)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)

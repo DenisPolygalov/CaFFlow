@@ -43,7 +43,7 @@ http://www.fsf.org/
 class COpenCVframeCaptureThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(np.ndarray)
 
-    def __init__(self, i_camera_idx, *args, **kwargs):
+    def __init__(self, i_camera_idx, h_win, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.b_running = False
         self.oc_camera = cv.VideoCapture(i_camera_idx)
@@ -59,6 +59,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
         self.i_frame_h = self.na_frame.shape[0]
         self.i_frame_w = self.na_frame.shape[1]
         self.i_ncolor_channels = self.na_frame.shape[2]
+        h_win.ioctlRequest.connect(self.__cb_on_ioctl_requested, Qt.QueuedConnection)
 
     def run(self):
         self.b_running = True
@@ -73,10 +74,13 @@ class COpenCVframeCaptureThread(QtCore.QThread):
             self.frameReady.emit(self.na_frame)
         self.oc_camera.release()
 
+    def __cb_on_ioctl_requested(self, d_ioctl_data):
+        raise NotImplementedError("Not implemented yet.")
+
     def get_cam_cap_prop(self, i_cam_id, i_prop_id):
         return self.oc_camera.get(i_prop_id)
 
-    def update_cam_cap_prop(self, i_cam_id, i_prop_id, prop_new_val):
+    def update_prop_sync(self, i_cam_id, i_prop_id, prop_new_val):
         prop_old = self.oc_camera.get(i_prop_id)
         self.oc_camera.set(i_prop_id, prop_new_val)
         prop_new = self.oc_camera.get(i_prop_id)

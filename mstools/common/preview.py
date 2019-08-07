@@ -42,6 +42,7 @@ http://www.fsf.org/
 
 class CQCameraPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
+    ioctlRequest = QtCore.pyqtSignal(dict)
 
     def __init__(self, *args, **kwargs):
         super(CQCameraPreviewWindow, self).__init__(*args, **kwargs)
@@ -284,22 +285,22 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             d_vstream_info['IS_MASTER'] = 0
         return d_vstream_info
 
-    def update_cap_prop(self, i_prop_id, prop_new_val):
+    def update_cap_prop(self, i_prop_id, prop_new_val, b_async_call=False):
         if self.__frame_cap_thread == None:
             raise ValueError("Unallocated camera object detected")
 
-        prop_old, prop_new = self.__frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
-        self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
-        return (prop_old, prop_new)
-
-    def update_cap_prop_async(self, i_prop_id, prop_new_val):
         if self.i_camera_idx < 0:
             raise RuntimeError("Inappropriate method usage. Call start_preview() first.")
-        d_ioctl_data = {}
-        d_ioctl_data['camera_idx'] = self.i_camera_idx
-        d_ioctl_data['prop_id'] = i_prop_id
-        d_ioctl_data['prop_new_val'] = prop_new_val
-        self.ioctlRequest.emit(d_ioctl_data)
+
+        if b_async_call:
+            d_ioctl_data = {}
+            d_ioctl_data['camera_idx'] = self.i_camera_idx
+            d_ioctl_data['prop_id'] = i_prop_id
+            d_ioctl_data['prop_new_val'] = prop_new_val
+            self.ioctlRequest.emit(d_ioctl_data)
+        else:
+            prop_old, prop_new = self.__frame_cap_thread.update_prop_sync(self.i_camera_idx, i_prop_id, prop_new_val)
+            self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
 
     def stop_preview(self):
         if self.__frame_cap_thread == None:
