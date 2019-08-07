@@ -45,8 +45,7 @@ http://www.fsf.org/
 def _camera_sync_load_and_start(oc_qcamera):
     cam_status = oc_qcamera.status()
     if cam_status != QCamera.UnloadedStatus:
-        print("ERROR: unexpected camera status: %s" % status2str(cam_status))
-        sys.exit(-1)
+        raise RuntimeError("ERROR: unexpected camera status: %s" % status2str(cam_status))
     i_sec_cnt = 0
     oc_qcamera.load()
     while True:
@@ -56,8 +55,7 @@ def _camera_sync_load_and_start(oc_qcamera):
             time.sleep(1)
             i_sec_cnt += 1
             if i_sec_cnt >= 10:
-                print("ERROR: unable to load camera")
-                sys.exit(-1)
+                raise RuntimeError("ERROR: unable to load camera")
     i_sec_cnt = 0
     oc_qcamera.start()
     while True:
@@ -67,16 +65,14 @@ def _camera_sync_load_and_start(oc_qcamera):
             time.sleep(1)
             i_sec_cnt += 1
             if i_sec_cnt >= 10:
-                print("ERROR: unable to start camera")
-                sys.exit(-1)
+                raise RuntimeError("ERROR: unable to start camera")
 #
 
 
 def _camera_sync_stop_and_unload(oc_qcamera):
     cam_status = oc_qcamera.status()
     if cam_status != QCamera.ActiveStatus:
-        print("ERROR: unexpected camera status: %s" % status2str(cam_status))
-        sys.exit(-1)
+        raise RuntimeError("ERROR: unexpected camera status: %s" % status2str(cam_status))
     i_sec_cnt = 0
     oc_qcamera.stop()
     while True:
@@ -86,8 +82,7 @@ def _camera_sync_stop_and_unload(oc_qcamera):
             time.sleep(1)
             i_sec_cnt += 1
             if i_sec_cnt >= 10:
-                print("ERROR: unable to stop camera")
-                sys.exit(-1)
+                raise RuntimeError("ERROR: unable to stop camera")
     i_sec_cnt = 0
     oc_qcamera.unload()
     while True:
@@ -97,15 +92,14 @@ def _camera_sync_stop_and_unload(oc_qcamera):
             time.sleep(1)
             i_sec_cnt += 1
             if i_sec_cnt >= 10:
-                print("ERROR: unable to unload camera")
-                sys.exit(-1)
+                raise RuntimeError("ERROR: unable to unload camera")
 #
 
 # TODO: move this class into the 'common.capture'?
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 
-    def __init__(self, l_do_capture, *args, **kwargs):
+    def __init__(self, l_do_capture, l_wins, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.t_do_capture = tuple(l_do_capture) # freeze it to prevent changes from outside
         self.b_running = False
@@ -138,6 +132,10 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                 self.l_frames.append(None) # *** WATCH OUT ***
                 self.l_frame_hwc.append((None, None, None)) # *** WATCH OUT ***
 
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                l_wins[i_cam_idx].ioctlRequest.connect(self.__cb_on_ioctl_requested, Qt.QueuedConnection)
+
     def run(self):
         self.b_running = True
         while self.b_running:
@@ -169,10 +167,19 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             self.i_frame_id += 1
             self.frameReady.emit('frameReady') # argument doesn't matter
 
+        # Both - 'Preview' and 'Recording' states are done here.
+        # All preview windows will be destroyed and all video writers
+        # must be closed here if and only if the 'Recording' was going on.
+        # Switching from 'Recording' state to 'Preview' state is not supported.
+        # TODO: maybe add this later. Use start_new_session() method?
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 self.l_cams[i_cam_idx].release()
-                self.l_video_writers[i_cam_idx].close()
+                if self.b_recording:
+                    self.l_video_writers[i_cam_idx].close()
+
+    def __cb_on_ioctl_requested(self, d_ioctl_data):
+        print(d_ioctl_data)
 
     def __check_cam_or_die(self, i_cam_id):
         if i_cam_id < 0 or i_cam_id >= len(self.l_cams):
@@ -443,7 +450,7 @@ class CMainWindow(QtWidgets.QWidget):
             else:
                 self.l_wins.append(None)
 
-        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture)
+        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins)
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
             oc_win.show()
@@ -471,7 +478,6 @@ class CMainWindow(QtWidgets.QWidget):
             d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
             l_FPS.append(d_vstream_info['FPS'])
             l_vstream_list.append(d_vstream_info)
-            # print("Start recording from source: %s" % self.l_caminfos[i_idx].description(), d_vstream_info)
             # TODO:
             # Warn user to change the frame rate values to all equal
             # or synchronize all cameras to maser one here if possible.
@@ -593,13 +599,14 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         if self.b_startup_guard: return
         l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
         i_w, i_h = int(l_res[0]), int(l_res[1])
-        print("new frame size:", i_w, i_h)
+        self.update_cap_prop_async(cv.CAP_PROP_FRAME_WIDTH, i_w)
+        self.update_cap_prop_async(cv.CAP_PROP_FRAME_HEIGHT, i_h)
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
         if not self.is_started(): return
         if self.b_startup_guard: return
         f_cam_fps = float(self.cbox_frame_rate.cbox.itemText(i_idx))
-        print("new frame rate:", f_cam_fps)
+        self.update_cap_prop_async(cv.CAP_PROP_FPS, f_cam_fps)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)

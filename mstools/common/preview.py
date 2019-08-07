@@ -227,6 +227,7 @@ class CNdarrayPreviewWidget(QtWidgets.QWidget):
 
 class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
+    ioctlRequest = QtCore.pyqtSignal(dict)
 
     def __init__(self, *args, b_is_master=False, b_enable_close_button=False, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
@@ -290,6 +291,15 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         prop_old, prop_new = self.__frame_cap_thread.update_cam_cap_prop(self.i_camera_idx, i_prop_id, prop_new_val)
         self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
         return (prop_old, prop_new)
+
+    def update_cap_prop_async(self, i_prop_id, prop_new_val):
+        if self.i_camera_idx < 0:
+            raise RuntimeError("Inappropriate method usage. Call start_preview() first.")
+        d_ioctl_data = {}
+        d_ioctl_data['camera_idx'] = self.i_camera_idx
+        d_ioctl_data['prop_id'] = i_prop_id
+        d_ioctl_data['prop_new_val'] = prop_new_val
+        self.ioctlRequest.emit(d_ioctl_data)
 
     def stop_preview(self):
         if self.__frame_cap_thread == None:
