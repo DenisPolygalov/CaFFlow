@@ -96,6 +96,9 @@ def _camera_sync_stop_and_unload(oc_qcamera):
 #
 
 # TODO: move this class into the 'common.capture'?
+# Maybe not a good idea because this class uses parts
+# imported from mendouscopy, such as CMuPaVideoWriter
+# and some sort of timestamp storage container in the future...
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 

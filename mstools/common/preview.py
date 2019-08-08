@@ -197,8 +197,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
     #
 #
 
-# FIXME this is software rendering.
-# TODO Add OpenGL version of this.
+# TODO this is software rendering. Add OpenGL version of this.
 # Note that using QtWidgets.QOpenGLWidget here is NOT simple.
 class CNdarrayPreviewWidget(QtWidgets.QWidget):
     def __init__(self, na_frame, *args, **kwargs):

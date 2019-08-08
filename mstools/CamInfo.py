@@ -32,7 +32,7 @@ along with this program; if not, a copy is available at
 http://www.fsf.org/
 """
 
-# TODO FIXME change output format to json instead of print()-ing each line
+# TODO change output format to json instead of print()-ing each line
 
 def captureMode2str(mode):
     if mode == QCamera.CaptureStillImage:
@@ -95,7 +95,7 @@ def status2str(status):
 
 
 def lockType2str(status):
-    # FIXME TODO not sure this way is the correct one
+    # TODO not sure this way is the correct one
     l_locks = []
     if (status == QCamera.NoLock):
         l_locks.append("NoLock")
