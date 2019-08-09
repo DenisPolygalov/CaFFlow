@@ -213,7 +213,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 
         i_idx_master = -1
         for i_idx, d_vstream_info in enumerate(l_vstream_list):
-            if d_vstream_info['IS_MASTER'] == 1:
+            if d_vstream_info != None and d_vstream_info['IS_MASTER'] == 1:
                 i_idx_master = i_idx
                 break
         if i_idx_master == -1:
