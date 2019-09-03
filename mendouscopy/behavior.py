@@ -9,7 +9,7 @@ import cv2 as cv
 import numpy as np
 
 """
-Copyright (C) 2018 Lilia Evgeniou,
+Copyright (C) 2018,2019 Lilia Evgeniou, Denis Polygalov
 Laboratory for Circuit and Behavioral Physiology,
 RIKEN Center for Brain Science, Saitama, Japan.
 This program is free software; you can redistribute it and/or modify
@@ -538,4 +538,128 @@ def remove_extra_keypoints(na_pos_xy, na_call_cnt, i_pos_history_depth, f_max_ju
     return na_pos_xy_clean
 #
 
+
+class CSingleSubjectTracker(object):
+    def __init__(self, i_frame_h, i_frame_w, frame_dtype, d_param):
+        self.t_aim_color = d_param['aim_color']
+        self.i_aim_thickness = d_param['aim_thickness']
+        self.f_frame_rate = d_param['frame_rate']
+        self.f_frame_dt_sec = 1.0/self.f_frame_rate
+        self.i_nframes = d_param['frames']
+        self.t_init_ROI = d_param['initial_ROI']
+        self.s_tracker_type = d_param['tracker_type']
+
+        # frames are counted starting from zero
+        # each time when the process_frame() method called.
+        self._i_frame_cnt = -1
+
+        # temporal storage for output data.
+        self.l_TS_SEC = [] # ts_sec - scalar, float
+        self.l_CNT_XY_RAW = [] # (center_x, center_y) tuple, float(!)
+        self.l_ROI = []    # (i_roi_x, i_roi_y, i_roi_w, i_roi_h) tuple, float
+        self.l_msel_frame_ids = [] # manual selection frame ids, vector of integers
+
+        # create tracker instance based on requested type
+        self.__create_tracker()
+
+        # main data exchange interface for this class
+        # NOTE that for this class na_out is a (H x W x 3) shaped array!
+        self.na_out = np.zeros([i_frame_h, i_frame_w, 3], dtype=frame_dtype)
+
+        # final storage for the Single TRACK data
+        self.d_STRACK = {}
+        self.d_STRACK['initial_frame_number'] = d_param['initial_frame_number']
+
+    def __create_tracker(self):
+        if self.s_tracker_type == 'BOOSTING':
+            self.oc_tracker = cv.TrackerBoosting_create()
+        elif self.s_tracker_type == 'MIL':
+            self.oc_tracker = cv.TrackerMIL_create()
+        elif self.s_tracker_type == 'KCF':
+            self.oc_tracker = cv.TrackerKCF_create()
+        elif self.s_tracker_type == 'TLD':
+            self.oc_tracker = cv.TrackerTLD_create()
+        elif self.s_tracker_type == 'MEDIANFLOW':
+            self.oc_tracker = cv.TrackerMedianFlow_create()
+        elif self.s_tracker_type == "CSRT":
+            self.oc_tracker = cv.TrackerCSRT_create()
+        else:
+            raise TypeError("Unsupported tracker type: %s" % d_param['tracker_type'])
+
+    def __process_ROI(self, t_ROI):
+        if tuple is not type(t_ROI) or len(t_ROI) != 4:
+            raise RuntimeError("something went seriously wrong")
+
+        fx, fy, fw, fh = t_ROI
+        fcx = fx + fw/2
+        fcy = fy + fh/2
+        i_aim_hsz = int((fw + fh)/4)
+        i_aim_rad = int(i_aim_hsz/2)
+        icx = int(fcx)
+        icy = int(fcy)
+
+        self.l_TS_SEC.append(self._i_frame_cnt * self.f_frame_dt_sec)
+        self.l_CNT_XY_RAW.append((fcx, fcy))
+        self.l_ROI.append(t_ROI)
+
+        cv.circle(self.na_out, (icx, icy), i_aim_rad, self.t_aim_color, self.i_aim_thickness)
+        cv.line(self.na_out, (icx-i_aim_hsz, icy), (icx+i_aim_hsz, icy), self.t_aim_color, self.i_aim_thickness)
+        cv.line(self.na_out, (icx, icy-i_aim_hsz), (icx, icy+i_aim_hsz), self.t_aim_color, self.i_aim_thickness)
+
+    def process_frame(self, na_input, b_verbose=False):
+        if len(na_input.shape) != 3 or na_input.shape[2] != 3:
+            raise ValueError("Unexpected frame shape")
+
+        # the frame is accepted for processing...
+        self._i_frame_cnt += 1
+        self.na_out[...] = na_input[...]
+
+        if self._i_frame_cnt == 0:
+            self.b_tracking_status = self.oc_tracker.init(na_input, self.t_init_ROI)
+            if not self.b_tracking_status:
+                raise RuntimeError("Unable to initialize the tracker")
+            self.l_msel_frame_ids.append(0)
+
+        # Update tracker state. Note that this is also to be called for the frame #0
+        self.b_tracking_status, t_curr_ROI = self.oc_tracker.update(na_input)
+
+        # In the case of a tracking failure we return here in order to
+        # give caller a choice - select another ROI and call restart_tracking()
+        # with the SAME frame or call skip_frame() if selection of a new ROI 
+        # is not possible for the frame at which this tracking failure occured.
+        # NOTE that skip_frame() does not advance the frame itself, only tracking data,
+        # so it is the caller's responsibility to call process_frame() after skip_frame()
+        if not self.b_tracking_status: return
+        # save ROI data in local storage if tracking went well
+        self.__process_ROI(t_curr_ROI)
+
+    def skip_frame(self):
+        # We don't need to change self._i_frame_cnt here!
+        self.l_TS_SEC.append(self._i_frame_cnt * self.f_frame_dt_sec)
+        self.l_CNT_XY_RAW.append((np.nan, np.nan))
+        self.l_ROI.append((np.nan, np.nan, np.nan, np.nan))
+
+    def is_tracking_succeed(self):
+        return self.b_tracking_status
+
+    def restart_tracking(self, na_input, t_new_ROI):
+        # We need to clear(!) and re-create the tracker object
+        self.oc_tracker.clear()
+        self.__create_tracker()
+        # Re-Initialize tracker with current frame and new ROI
+        self.b_tracking_status = self.oc_tracker.init(na_input, t_new_ROI)
+        if not self.b_tracking_status:
+            raise RuntimeError("Unable to re-initialize the tracker")
+        self.l_msel_frame_ids.append(self._i_frame_cnt)
+        self.__process_ROI(t_new_ROI)
+
+    def finalize_tracking(self):
+        self.d_STRACK['TS_SEC'] = np.array(self.l_TS_SEC)
+        self.d_STRACK['CNT_XY_RAW'] = np.array(self.l_CNT_XY_RAW)
+        self.d_STRACK['ROI'] = np.array(self.l_ROI)
+        self.d_STRACK['MSEL_FRAME_IDS'] = np.array(self.l_msel_frame_ids)
+        self.d_STRACK['frame_rate_Hz'] = self.f_frame_rate
+        self.d_STRACK['number_of_input_frames'] = self.i_nframes
+    #
+#
 
