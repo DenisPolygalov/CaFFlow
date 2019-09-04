@@ -17,6 +17,7 @@ import cv2 as cv
 
 from common.widgets import CLabeledComboBox
 from common.widgets import CLabeledSpinSlider
+from common.widgets import CTableItemDelegate
 from common.preview import COpenCVPreviewWindow
 
 
@@ -112,6 +113,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.l_frame_hwc = [] # list of len() == 3 tuples of frame HEIGHT x WIDTH x COLORS
         self.i_frame_id = -1 # so valid frame numbers will start from zero
         self.l_video_writers = []
+        self.l_ts = []
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
@@ -130,10 +132,12 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 
                 self.l_frames.append(na_frame.copy())
                 self.l_frame_hwc.append((na_frame.shape[0], na_frame.shape[1], na_frame.shape[2]))
+                self.l_ts.append(0.0)
 
             else:
                 self.l_frames.append(None) # *** WATCH OUT ***
                 self.l_frame_hwc.append((None, None, None)) # *** WATCH OUT ***
+                self.l_ts.append(None) # *** WATCH OUT ***
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
@@ -158,6 +162,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
                 if b_do_cap:
                     b_status, self.l_frames[i_cam_idx][...] = self.l_cams[i_cam_idx].retrieve()
+                    self.l_ts[i_cam_idx] = time.perf_counter()
                     if not b_status:
                         # seems like this happen inevitably during frame rate/size change events
                         raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
@@ -166,6 +171,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
                 if b_do_cap and self.b_recording:
                     self.l_video_writers[i_cam_idx].write_next_frame(self.l_frames[i_cam_idx])
+                    self.l_video_writers[i_cam_idx].write_time_stamp(i_cam_idx, self.l_ts[i_cam_idx])
 
             self.i_frame_id += 1
             self.frameReady.emit('frameReady') # argument doesn't matter
@@ -246,34 +252,6 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                 self.l_video_writers.append(None) # *** WATCH OUT ***
         self.b_recording = True
     #
-#
-
-
-class CTableItemDelegate(QtWidgets.QItemDelegate):
-    def createEditor(self, parent, option, index):
-        comboBox = QtWidgets.QComboBox(parent)
-        comboBox.addItem("disabled")
-        comboBox.addItem("ENABLED")
-        comboBox.activated.connect(self.emitCommitData)
-        return comboBox
-
-    def setEditorData(self, editor, index):
-        comboBox = editor
-        if not comboBox:
-            return
-
-        pos = comboBox.findText(index.model().data(index), Qt.MatchExactly)
-        comboBox.setCurrentIndex(pos)
-
-    def setModelData(self, editor, model, index):
-        comboBox = editor
-        if not comboBox:
-            return
-
-        model.setData(index, comboBox.currentText())
-
-    def emitCommitData(self):
-        self.commitData.emit(self.sender())
 #
 
 

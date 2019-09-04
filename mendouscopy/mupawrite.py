@@ -60,7 +60,10 @@ class CMuPaVideoWriter(object):
         self.s_out_rses_dir = None
         self.i_out_file_id = 1  # start from 1 for backward compatibility
         self.i_out_frame_id = 0 # compared to the self.i_nframes_per_file
+        self.i_out_frame_id_cumsum = 0
         self.s_out_fname = None
+        self.s_out_ts_fname = None
+        self.h_ts_file = None
         self.oc_video_writer = None
         self.__prepare_new_session()
 
@@ -77,8 +80,14 @@ class CMuPaVideoWriter(object):
         if not os.path.isdir(self.s_out_rses_dir):
             raise IOError("Unable to make/access recording session directory!")
 
+        if self.oc_master_writer == None:
+            self.s_out_ts_fname = os.path.join(self.s_out_rses_dir, 'timestamp.dat')
+            self.h_ts_file = open(self.s_out_ts_fname, 'w')
+            self.h_ts_file.write('camNum\tframeNum\tsysClock\tbuffer\n')
+
         self.i_out_file_id = 1
         self.i_out_frame_id = 0
+        self.i_out_frame_id_cumsum = 0
 
         # e.g. ./data/2019-04-16_16-12-34/H16_M12_S34/msCam1.avi
         self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
@@ -103,6 +112,7 @@ class CMuPaVideoWriter(object):
 
         self.oc_video_writer.write(na_in)
         self.i_out_frame_id += 1
+        self.i_out_frame_id_cumsum += 1
 
         if self.i_out_frame_id >= self.i_nframes_per_file:
             self.oc_video_writer.release()
@@ -111,11 +121,25 @@ class CMuPaVideoWriter(object):
             self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
             self.b_new_file_at_next_write = True
 
+    def write_time_stamp(self, i_frame_src_idx, f_time_stamp):
+        if self.oc_master_writer == None:
+            self.h_ts_file.write('%i\t%i\t%i\t%i\n' % (i_frame_src_idx, self.i_out_frame_id_cumsum, round(1000 * f_time_stamp), 1))
+        else:
+            self.oc_master_writer.write_time_stamp(i_frame_src_idx, f_time_stamp)
+
     def close(self):
         if self.oc_video_writer != None:
             self.oc_video_writer.release()
             del self.oc_video_writer
             self.oc_video_writer = None
+
+        if self.h_ts_file != None:
+            self.h_ts_file.close()
+            self.h_ts_file = None
+
+        if self.s_out_ts_fname != None:
+            del self.s_out_ts_fname
+            self.s_out_ts_fname = None
 
     def write_last_frame(self, na_in):
         self.write_next_frame(na_in)

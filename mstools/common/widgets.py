@@ -110,3 +110,30 @@ class CLabeledSpinSlider(QtWidgets.QWidget):
     #
 #
 
+
+class CTableItemDelegate(QtWidgets.QItemDelegate):
+    def createEditor(self, parent, option, index):
+        comboBox = QtWidgets.QComboBox(parent)
+        comboBox.addItem("disabled")
+        comboBox.addItem("ENABLED")
+        comboBox.activated.connect(self.emitCommitData)
+        return comboBox
+
+    def setEditorData(self, editor, index):
+        comboBox = editor
+        if not comboBox:
+            return
+
+        pos = comboBox.findText(index.model().data(index), Qt.MatchExactly)
+        comboBox.setCurrentIndex(pos)
+
+    def setModelData(self, editor, model, index):
+        comboBox = editor
+        if not comboBox:
+            return
+
+        model.setData(index, comboBox.currentText())
+
+    def emitCommitData(self):
+        self.commitData.emit(self.sender())
+#
