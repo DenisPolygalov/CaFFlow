@@ -8,8 +8,6 @@ by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subse
 Practically however, it can be used for processing of wider range of frame streams,
 such as animal's behavior only, batch image/video editing etc.
 
-**This repository is currently _under_  _development_. Code contributions and bug reports are welcome.**
-
 ### Repository layout
 
 CaFFlow consist of two main parts - framework-side and user-side scripts.
@@ -85,9 +83,6 @@ Install necessary Python packages (the command syntax is common across Windows/M
 `(cafflow)> conda install opencv numpy pandas scipy scikit-image`
 
 The set of packages above is sufficient to run analysis without visualization (on a headless server for example) and GUI applications.
-To add visualization capability - install Matplotlib package:
-
-`(cafflow)> conda install matplotlib`
 
 For GUI-based applications - install PyQt package:
 
@@ -95,9 +90,10 @@ For GUI-based applications - install PyQt package:
 
 For video encoding/decoding support the lossless video codec (FFV1)
 must be installed and registered globally, at your operating system level
-(i.e. as a COM DLL in the case of Windows). First of all it is necessary
-to check if you have the FFV1 video encoding support already available on your
-PC (installed for example by a third-party application) or not.
+(i.e. as a COM DLL in the case of Windows). FFV1 video __encoding__ is supported by
+OpenCV distributed via the `conda` installer. FFV1 video __decoding__ support
+might be already available on your PC (installed for example by a third-party
+application) so it is necessary to check it's presence.
 In order to do so run the `examples/sXX_capture_video.py` script:
 
 `(cafflow)> cd CaFFlow\examples`
@@ -106,10 +102,10 @@ In order to do so run the `examples/sXX_capture_video.py` script:
 
 and examine it's output. The script will try to capture a chunk of video
 stream from default video camera (must be connected in advance obviously),
-encode the video by using FFV1 codec and write encoded video 
+encode the video by using FFV1 codec provided by OpenCV and write encoded video
 into a file called *'captured_lossless_video.avi'* located in the same directory.
 If the file was created, have non-zero size and you can play it's content
-by using common video-player software then you have FFV1 support already installed.
+by using common video-player software then you have FFV1 decoding support already installed.
 If the file is broken or not created at all you can try to install 
 [LAV Filters](https://github.com/Nevcairiel/LAVFilters) - 
 Open-Source DirectShow Media Splitter and Decoders binary package
@@ -117,7 +113,7 @@ for Windows**
 from [here](https://github.com/Nevcairiel/LAVFilters/releases)
 , then restart your PC and repeat the test.
 
-** Installing FFV1 video encoding support for other OSes is outside of the scope of this project.
+** Installing FFV1 video encoding/decoding support for other OSes is outside of the scope of this project.
 
 The next step is to test your Python environment:
 
