@@ -1,12 +1,12 @@
 # CaFFlow
 
 CaFFlow is a Python framework for acquisition and analysis of single-,
-two-photon calcium imaging and experimental animal's behavior data.
-This project is intended to be used for acquisition of video data stream(s) generated
+two-photon calcium imaging and experimental subject's behavior data.
+This project was originally intended to be used for acquisition of video data stream(s) generated
 by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subsequent
 (offline and/or online) analysis of the acquired data.
-Practically however, it can be used for processing of wider range of frame streams,
-such as animal's behavior only, batch image/video editing etc.
+Currently however, it can be used for processing of wider range of frame streams,
+such as subject's behavior only, batch image/video editing etc.
 
 ### Repository layout
 
@@ -32,12 +32,21 @@ it has a strict set of external dependencies and guarantied backward compatibili
 
 ### Installation
 
-__FIXME: this is short description for those who already familiar with Python/Conda.__
+#### Prerequisite software installation
 
+_Feel free to skip this section if you already familiar with git/git-lfs/conda._
+
+Make sure you have decent text editor (such as for example [Notepad++](https://notepad-plus-plus.org/) ) installed.
 Download and install a command line interface based `git` client, such as
 [Git for Windows](https://git-scm.com/download/win) if you do not already have it installed.
+The `git` client software is offered in multiple packages. If you not familiar with git choose
+the default package (32/64 bit installer type) which is usually offered automatically
+from the link above. During installation make sure to check
+[Git Large File Storage](https://git-lfs.github.com/) support checkbox.
+If you had installed the Notepad++ earlier choose it as the default text
+editor for the git client. All other options may be left default.
 
-Install/activate [Git Large File Storage](https://git-lfs.github.com/) extension.
+Activate the Git LFS extension.
 
 _Windows:_
 
@@ -57,6 +66,10 @@ Change directory `(cd)` to the place where you plan to keep CaFFlow and clone th
 `$ git clone https://github.com/DenisPolygalov/CaFFlow.git`
 
 Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't have it installed already.
+Note that if you plan to use GUI-based (PyQt) applications included into CaFFlow then it might be better to choose
+32-bit version of the Miniconda due to a bug in 64-bit version preventing import of the PyQt.QtMultimedia module.
+
+#### CaFFlow installation
 
 Create and activate new 'Conda environment':
 
@@ -109,17 +122,22 @@ by using common video-player software then you have FFV1 decoding support alread
 If the file is broken or not created at all you can try to install 
 [LAV Filters](https://github.com/Nevcairiel/LAVFilters) - 
 Open-Source DirectShow Media Splitter and Decoders binary package
-for Windows** 
+for Windows __**__
 from [here](https://github.com/Nevcairiel/LAVFilters/releases)
 , then restart your PC and repeat the test.
 
-** Installing FFV1 video encoding/decoding support for other OSes is outside of the scope of this project.
+__**__ Installing FFV1 video encoding/decoding support for other OSes is outside of the scope of this project.
 
 The next step is to test your Python environment:
 
 `(cafflow)> cd CaFFlow`
 
 `(cafflow)> python -m unittest discover unit_test`
+
+While running command above you may see warning messages such as
+"RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility."
+which is caused by numpy package and known to be harmless. Any error messages however
+indicate problems with your Python environment.
 
 Read Python scripts located in the __examples__ directory, execute them and adjust for your purpose.
 Note that all example scripts are intended to be executed from __*inside*__ of the __examples__ directory.

@@ -96,10 +96,7 @@ def _camera_sync_stop_and_unload(oc_qcamera):
                 raise RuntimeError("ERROR: unable to unload camera")
 #
 
-# TODO: move this class into the 'common.capture'?
-# Maybe not a good idea because this class uses parts
-# imported from mendouscopy, such as CMuPaVideoWriter
-# and some sort of timestamp storage container in the future...
+
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 
@@ -188,7 +185,8 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                     self.l_video_writers[i_cam_idx].close()
 
     def __cb_on_ioctl_requested(self, d_ioctl_data):
-        print(d_ioctl_data)
+        # print(d_ioctl_data)
+        pass
 
     def __check_cam_or_die(self, i_cam_id):
         if i_cam_id < 0 or i_cam_id >= len(self.l_cams):
@@ -463,10 +461,14 @@ class CMainWindow(QtWidgets.QWidget):
             # Warn user to change the frame rate values to all equal
             # or synchronize all cameras to maser one here if possible.
             # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
-            # Implement frame time stamp storage in the COpenCVmultiFrameCapThread.
+            # Implement COpenCVmultiFrameCapThread.__cb_on_ioctl_requested() method
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Estimate amount of dropped frames and implement correspondent counters.
+            # Move COpenCVmultiFrameCapThread into the 'common.capture'?
+            # Maybe not a good idea because COpenCVmultiFrameCapThread uses parts
+            # imported from mendouscopy, such as CMuPaVideoWriter. Decouple frame source
+            # from the frame sink?
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
