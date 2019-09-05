@@ -526,14 +526,15 @@ class CMainWindow(QtWidgets.QWidget):
 class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
     def __init__(self, *args, **kwargs):
         super(CSillyCameraPreviewWindow, self).__init__(*args, **kwargs)
+        self._INIT_FRATE_VAL = 20 # in Hz
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
         # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
     #
 #
 
@@ -541,6 +542,7 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
 class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
     def __init__(self, oc_cam_info, *args, **kwargs):
         super(CSmartCameraPreviewWindow, self).__init__(*args, **kwargs)
+        self._INIT_FRATE_VAL = 20 # in Hz
         s_cam_descr = oc_cam_info.description()
 
         oc_cam = QCamera(oc_cam_info)
@@ -601,8 +603,8 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
 
         i_curr_frate = int(self.get_cap_prop(cv.CAP_PROP_FPS))
         for i_idx in range(self.cbox_frame_rate.cbox.count()):
@@ -619,6 +621,7 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         self.b_startup_guard = False
     #
 #
+
 
 class CMiniScopePreviewWindow(COpenCVPreviewWindow):
     def __init__(self, b_emulation_mode=False, *args, **kwargs):
@@ -661,11 +664,11 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.sld_exposure = CLabeledSpinSlider("Exposure:", (1, 255), 1, cb_action=self.__cb_on_exposure_changed)
         self.toolbar.addWidget(self.sld_exposure)
         self.toolbar.addSeparator()
-        
+
         self.sld_gain = CLabeledSpinSlider("Gain:", (16, 64), 1, cb_action=self.__cb_on_gain_changed)
         self.toolbar.addWidget(self.sld_gain)
         self.toolbar.addSeparator()
-        
+
         self.sld_excitation = CLabeledSpinSlider("Excitation:", (0, 100), 1, cb_action=self.__cb_on_excitation_changed)
         self.toolbar.addWidget(self.sld_excitation)
         self.toolbar.addSeparator()
@@ -674,17 +677,17 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.addToolBar(self.toolbar)
 
     def __reset_UI(self):
-        self.update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
         self.cbox_frame_rate.cbox.setCurrentIndex(self._INIT_FRATE_IDX)
         self.sld_exposure.slider.setSliderPosition(self._INIT_EXPOSURE)
         self.sld_gain.slider.setSliderPosition(self._INIT_GAIN)
         self.sld_excitation.slider.setSliderPosition(self._INIT_EXCITATION)
         # TODO add here (re)initialization code for other GUI elements
-        # DO NOT call self.update_cap_prop() here. Such calls must be
+        # WARNING: DO NOT call self.update_cap_prop() here. Such calls must be
         # implemented in the correspondent event handlers (i.e. self.__cb_on_*)
 
     def __cb_on_set_CMOS_btn_clicked(self, event):
         if not self.is_started(): return
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
         self.__reset_UI()
 
     def __cb_on_frame_rate_cbox_index_changed(self, event):
@@ -708,10 +711,11 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
 
-        if self.b_emulation_mode:
-            f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-            if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
-                self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
+        # Seems like Miniscope need the initial FPS to be set too,
+        # in a way not consistent with it's further changes!
+        f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
+        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
 
         self.__reset_UI()
     #
