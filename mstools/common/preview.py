@@ -233,7 +233,6 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
-        self.INIT_FRATE_VAL = 20 # in Hz
         self.i_camera_idx = -1
         self.oc_camera_info = None
         self.__frame_cap_thread = None

@@ -143,13 +143,13 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self._RECORD_END = 0x02
         self._TRIG_RECORD_EXT = 0x02
         self._SET_CMOS_SETTINGS = 0x03
+        self._INIT_FRATE_VAL = 20 # in Hz
         self._INIT_FRATE_IDX = 3 # (20 Hz)
         self.t_frate_names = ("5 Hz", "10 Hz", "15 Hz", "20 Hz", "30 Hz", "60 Hz")
         self.t_frate_values = (0x11, 0x12, 0x13, 0x14, 0x15, 0x16)
         self._INIT_EXPOSURE = 255
         self._INIT_GAIN = 16
         self._INIT_EXCITATION = 0
-        self.setWindowTitle("Miniscope")
 
         self.b_emulation_mode = b_emulation_mode
         if self.b_emulation_mode:
@@ -194,6 +194,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.sld_gain.slider.setSliderPosition(self._INIT_GAIN)
         self.sld_excitation.slider.setSliderPosition(self._INIT_EXCITATION)
         # TODO add here (re)initialization code for other GUI elements
+        # DO NOT call self.update_cap_prop() here. Such calls must be
+        # implemented in the correspondent event handlers (i.e. self.__cb_on_*)
 
     def __cb_on_set_CMOS_btn_clicked(self, event):
         if not self.is_started(): return
@@ -222,8 +224,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
 
         if self.b_emulation_mode:
             f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-            if abs(f_cam_fps - self.INIT_FRATE_VAL) > 0.5:
-                self.update_cap_prop(cv.CAP_PROP_FPS, self.INIT_FRATE_VAL)
+            if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
+                self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
 
         self.__reset_UI()
     #
