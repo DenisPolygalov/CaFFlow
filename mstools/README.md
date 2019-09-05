@@ -7,8 +7,7 @@ it was launched and prints out detailed information about each of them.
 drop down list of all available sources and view the live video stream from it.
 - __msView.py__ - GUI application that allows you to use the Miniscope device in a "view only" mode,
 i.e. without recording any data. So far useful only for base-plating, etc.
-
-__FIXME: actual recording feature is not available yet.__
+- __msCap.py__ - GUI application for data acquisition from Miniscope and/or any other arbitrary set of video sources.
 
 __NOTE:__ If you experiencing troubles/errors on your PC related to capturing video - try to locate
 when the problem appears by executing scripts in the *order* listed above.

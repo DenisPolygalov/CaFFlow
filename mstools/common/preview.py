@@ -271,7 +271,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     def get_cap_prop(self, i_prop_id):
         if self.__frame_cap_thread == None:
             raise ValueError("Unallocated camera object detected")
-        return self.__frame_cap_thread.get_cam_cap_prop(self.i_camera_idx, i_prop_id)
+        return self.__frame_cap_thread.read_prop_sync(self.i_camera_idx, i_prop_id)
 
     def get_vstream_info(self):
         d_vstream_info = {}

@@ -194,7 +194,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         if not self.t_do_capture[i_cam_id]:
             raise ValueError("Capture mode for camera number %i is not enabled" % i_cam_id)
 
-    def get_cam_cap_prop(self, i_cam_id, i_prop_id):
+    def read_prop_sync(self, i_cam_id, i_prop_id):
         self.__check_cam_or_die(i_cam_id)
         return self.l_cams[i_cam_id].get(i_prop_id)
 
@@ -469,6 +469,8 @@ class CMainWindow(QtWidgets.QWidget):
             # Maybe not a good idea because COpenCVmultiFrameCapThread uses parts
             # imported from mendouscopy, such as CMuPaVideoWriter. Decouple frame source
             # from the frame sink?
+            # Implement 'settings_and_notes.dat' file generation. Run-time notes/events?
+            # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \

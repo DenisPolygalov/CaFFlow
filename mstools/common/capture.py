@@ -77,7 +77,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
     def __cb_on_ioctl_requested(self, d_ioctl_data):
         raise NotImplementedError("Not implemented yet.")
 
-    def get_cam_cap_prop(self, i_cam_id, i_prop_id):
+    def read_prop_sync(self, i_cam_id, i_prop_id):
         return self.oc_camera.get(i_prop_id)
 
     def update_prop_sync(self, i_cam_id, i_prop_id, prop_new_val):

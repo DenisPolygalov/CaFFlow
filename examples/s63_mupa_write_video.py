@@ -52,9 +52,28 @@ def write_single_session(oc_vcap, oc_writer, i_nframes_max):
 
 
 def test_single_stream():
-    oc_writer = CMuPaVideoWriter(".", "msCam", 20.0, 640, 480, i_nframes_per_file=100)
-    oc_vcap = cv.VideoCapture(0)
+    f_fps_desired = 20.0
     i_nframes_max = 200
+    oc_vcap = cv.VideoCapture(0)
+    f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
+    i_frame_w = int(oc_vcap.get(cv.CAP_PROP_FRAME_WIDTH))
+    i_frame_h = int(oc_vcap.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+    print("Camera's FPS: %f Hz" % f_fps)
+    print("Camera's frame size: %i x %i" % (i_frame_w, i_frame_h))
+
+    if f_fps < 5:
+        print("Low/zero FPS returned. Trying to enforce...")
+        oc_vcap.set(cv.CAP_PROP_FPS, f_fps_desired)
+        f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
+        print("Camera's FPS: %f Hz" % f_fps)
+        if (f_fps_desired - f_fps) < 0.1:
+            print("Enforcing FPS succeed!")
+        else:
+            print("Enforcing FPS filed! Try anyway...")
+            f_fps = f_fps_desired
+
+    oc_writer = CMuPaVideoWriter(".", "msCam", f_fps, i_frame_w, i_frame_h, i_nframes_per_file=100)
 
     write_single_session(oc_vcap, oc_writer, i_nframes_max)
     s_new_rsess_path = oc_writer.start_new_session()
@@ -92,10 +111,29 @@ def write_multi_session(oc_vcap, oc_writer_master, oc_writer_slave, i_nframes_ma
 
 
 def test_multi_stream():
-    oc_writer_master = CMuPaVideoWriter(".", "msCam", 20.0, 640, 480, i_nframes_per_file=100)
-    oc_writer_slave = CMuPaVideoWriter(".", "behavCam", 20.0, 640, 480, i_nframes_per_file=100, master=oc_writer_master)
-    oc_vcap = cv.VideoCapture(0)
+    f_fps_desired = 20.0
     i_nframes_max = 200
+    oc_vcap = cv.VideoCapture(0)
+    f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
+    i_frame_w = int(oc_vcap.get(cv.CAP_PROP_FRAME_WIDTH))
+    i_frame_h = int(oc_vcap.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+    print("Camera's FPS: %f Hz" % f_fps)
+    print("Camera's frame size: %i x %i" % (i_frame_w, i_frame_h))
+
+    if f_fps < 5:
+        print("Low/zero FPS returned. Trying to enforce...")
+        oc_vcap.set(cv.CAP_PROP_FPS, f_fps_desired)
+        f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
+        print("Camera's FPS: %f Hz" % f_fps)
+        if (f_fps_desired - f_fps) < 0.1:
+            print("Enforcing FPS succeed!")
+        else:
+            print("Enforcing FPS filed! Try anyway...")
+            f_fps = f_fps_desired
+
+    oc_writer_master = CMuPaVideoWriter(".", "msCam", f_fps, i_frame_w, i_frame_h, i_nframes_per_file=100)
+    oc_writer_slave = CMuPaVideoWriter(".", "behavCam", f_fps, i_frame_w, i_frame_h, i_nframes_per_file=100, master=oc_writer_master)
 
     write_multi_session(oc_vcap, oc_writer_master, oc_writer_slave, i_nframes_max)
     s_new_rsess_path = oc_writer_master.start_new_session()
