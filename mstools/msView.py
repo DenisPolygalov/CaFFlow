@@ -16,6 +16,8 @@ import cv2 as cv
 
 from common.preview import CQCameraPreviewWindow
 from common.preview import COpenCVPreviewWindow
+from common.preview import CSillyCameraPreviewWindow
+from common.preview import CSmartCameraPreviewWindow
 from common.preview import CMiniScopePreviewWindow
 from common.capture import COpenCVframeCaptureThread
 
@@ -92,14 +94,26 @@ class CMainWindow(QtWidgets.QWidget):
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
         elif s_cam_descr.find("Tape Recorder") >= 0:
-            self.win_preview = COpenCVPreviewWindow()
+            self.win_preview = CSillyCameraPreviewWindow(b_enable_close_button=True)
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
         else:
+            # There are multiple options available for various video sources:
+
+            # 1. Preview window based on QCamera class from PyQt5
             self.win_preview = CQCameraPreviewWindow()
             # WARNING: do not create self.oc_frame_cap_thread object
             # for the CQCameraPreviewWindow() type of window!
             # Check self.oc_frame_cap_thread == None all the way below!
+            # To my knowledge QCamera does not provide low level access to video frames.
+
+            # 2. Generic OpenCV based preview window
+            # self.win_preview = COpenCVPreviewWindow(b_enable_close_button=True)
+            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+
+            # 3. Same as above but provide QCameraInfo and able to change frame rate/resolution
+            # self.win_preview = CSmartCameraPreviewWindow(self.l_cameras[i_idx], b_enable_close_button=True, b_is_master=True)
+            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
         # ------------------------------------------------------------
 
         self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)

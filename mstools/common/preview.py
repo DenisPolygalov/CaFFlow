@@ -382,6 +382,18 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             self.save_state()
         self.stop_preview()
         self.closeSignal.emit()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_F1:
+            sys.stdout.write("CAP_PROP_FRAME_WIDTH: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH)))
+            sys.stdout.write("CAP_PROP_FRAME_HEIGHT: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT)))
+            sys.stdout.write("CAP_PROP_FPS: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_FPS)))
+            sys.stdout.write("CAP_PROP_SATURATION: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_SATURATION)))
+            sys.stdout.write("CAP_PROP_BRIGHTNESS: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_BRIGHTNESS)))
+            sys.stdout.write("CAP_PROP_GAIN: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_GAIN)))
+            sys.stdout.write("CAP_PROP_HUE: %s\n" % repr(self.get_cap_prop(cv.CAP_PROP_HUE)))
+            sys.stdout.write("\n")
+        super(COpenCVPreviewWindow, self).keyPressEvent(event)
     #
 #
 
@@ -499,6 +511,7 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self._INIT_FRATE_IDX = 3 # (20 Hz)
         self.t_frate_names = ("5 Hz", "10 Hz", "15 Hz", "20 Hz", "30 Hz", "60 Hz")
         self.t_frate_values = (0x11, 0x12, 0x13, 0x14, 0x15, 0x16)
+        self.t_frate_val_Hz = (5, 10, 15, 20, 30, 60)
         self._INIT_EXPOSURE = 255
         self._INIT_GAIN = 16
         self._INIT_EXCITATION = 0
@@ -510,12 +523,6 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
             self.setWindowTitle("Miniscope")
 
         self.toolbar = QtWidgets.QToolBar("Preview")
-
-        self.btn_set_cmos = QtWidgets.QPushButton("RESET")
-        self.btn_set_cmos.clicked.connect(self.__cb_on_set_CMOS_btn_clicked)
-        self.btn_set_cmos.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
-        self.toolbar.addWidget(self.btn_set_cmos)
-        self.toolbar.addSeparator()
 
         self.cbox_frame_rate = CLabeledComboBox("Frame Rate:")
         self.cbox_frame_rate.cbox.addItems(self.t_frate_names)
@@ -548,19 +555,16 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # WARNING: DO NOT call self.update_cap_prop() here. Such calls must be
         # implemented in the correspondent event handlers (i.e. self.__cb_on_*)
 
-    def __cb_on_set_CMOS_btn_clicked(self, event):
-        if not self.is_started(): return
-        self.update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
-        self.__reset_UI()
-
     def __cb_on_frame_rate_cbox_index_changed(self, event):
         if not self.is_started(): return
         self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self.cbox_frame_rate.cbox.currentIndex()])
 
     def __cb_on_exposure_changed(self, i_new_value):
+        if not self.is_started(): return
         self.update_cap_prop(cv.CAP_PROP_BRIGHTNESS, i_new_value)
 
     def __cb_on_gain_changed(self, i_new_value):
+        if not self.is_started(): return
         # Gains between 32 and 64 must be even for MT9V032
         if i_new_value >= 32 and (i_new_value % 2 == 1):
             self.update_cap_prop(cv.CAP_PROP_GAIN, i_new_value + 1)
@@ -568,19 +572,42 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
             self.update_cap_prop(cv.CAP_PROP_GAIN, i_new_value)
 
     def __cb_on_excitation_changed(self, i_new_value):
+        if not self.is_started(): return
         i_val = int(i_new_value*(0x0FFF)/100)|0x3000
         self.update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
 
+    def __reset_HW(self):
+        # reset CMOS
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self._SET_CMOS_SETTINGS)
+        # reset excitation (HUE)
+        i_val = int(self._INIT_EXCITATION*(0x0FFF)/100)|0x3000
+        self.update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
+        # reset the gain
+        if self._INIT_GAIN >= 32 and (self._INIT_GAIN % 2 == 1):
+            self.update_cap_prop(cv.CAP_PROP_GAIN, self._INIT_GAIN + 1)
+        else:
+            self.update_cap_prop(cv.CAP_PROP_GAIN, self._INIT_GAIN)
+        # reset exposure (BRIGHTNESS)
+        self.update_cap_prop(cv.CAP_PROP_BRIGHTNESS, self._INIT_EXPOSURE)
+        # reset frame rate (SATURATION)
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self._INIT_FRATE_IDX])
+
+    def get_vstream_info(self):
+        d_vstream_info = super().get_vstream_info()
+        d_vstream_info['FPS'] = self.t_frate_val_Hz[self.cbox_frame_rate.cbox.currentIndex()]
+        return d_vstream_info
+
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+        self.__reset_UI()
+        self.__reset_HW()
 
         # Seems like Miniscope need the initial FPS to be set too,
         # in a way not consistent with it's further changes!
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
         if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
             self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
-
-        self.__reset_UI()
+        #
     #
 #
 

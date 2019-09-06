@@ -410,6 +410,7 @@ class CMainWindow(QtWidgets.QWidget):
             # Implement COpenCVmultiFrameCapThread.__cb_on_ioctl_requested() method
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
+            # Implement graceful recovery from failed grab()/retrieve() calls.
             # Estimate amount of dropped frames and implement correspondent counters.
             # Move COpenCVmultiFrameCapThread into the 'common.capture'?
             # Maybe not a good idea because COpenCVmultiFrameCapThread uses parts
