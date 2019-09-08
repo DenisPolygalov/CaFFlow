@@ -46,7 +46,7 @@ http://www.fsf.org/
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 
-    def __init__(self, l_do_capture, l_wins, *args, **kwargs):
+    def __init__(self, l_do_capture, l_wins, oc_sink_list, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.t_do_capture = tuple(l_do_capture) # freeze it to prevent changes from outside
         self.b_running = False
@@ -55,7 +55,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.l_frames = []
         self.l_frame_hwc = [] # list of len() == 3 tuples of frame HEIGHT x WIDTH x COLORS
         self.i_frame_id = -1 # so valid frame numbers will start from zero
-        self.l_video_writers = []
+        self.oc_sink_list = oc_sink_list
         self.l_ts = []
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
@@ -110,25 +110,21 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                         # seems like this happen inevitably during frame rate/size change events
                         raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
 
-            # write acquired frames into files
+            # push acquired frames into a sink(s) (not necessary files)
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
                 if b_do_cap and self.b_recording:
-                    self.l_video_writers[i_cam_idx].write_next_frame(self.l_frames[i_cam_idx])
-                    self.l_video_writers[i_cam_idx].write_time_stamp(i_cam_idx, self.l_ts[i_cam_idx])
+                    self.oc_sink_list.write_next_frame(i_cam_idx, self.l_frames[i_cam_idx])
+                    self.oc_sink_list.write_time_stamp(i_cam_idx, self.l_ts[i_cam_idx])
 
             self.i_frame_id += 1
             self.frameReady.emit('frameReady') # argument doesn't matter
 
         # Both - 'Preview' and 'Recording' states are done here.
-        # All preview windows will be destroyed and all video writers
-        # must be closed here if and only if the 'Recording' was going on.
-        # Switching from 'Recording' state to 'Preview' state is not supported.
-        # TODO: maybe add this later. Use start_new_session() method?
+        # All preview windows will be destroyed and all video writers must be
+        # closed right after an instance of this class is done it's work.
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 self.l_cams[i_cam_idx].release()
-                if self.b_recording:
-                    self.l_video_writers[i_cam_idx].close()
 
     def __cb_on_ioctl_requested(self, d_ioctl_data):
         # print(d_ioctl_data)
@@ -169,6 +165,32 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         if i_idx_master == -1:
             raise RuntimeError("Sanity check failed. This should never happen.")
 
+        self.b_recording = True
+    #
+#
+
+
+class CMuStreamVideoWriter(object):
+    def __init__(self, l_do_capture, *args, **kwargs):
+        self.t_do_capture = tuple(l_do_capture)
+        self.l_video_writers = []
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            self.l_video_writers.append(None)
+
+    def start_recording(self, d_rec_info):
+        s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
+        l_vstream_list  = d_rec_info['VSTREAM_LIST']
+        if len(l_vstream_list) != len(self.t_do_capture):
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        i_idx_master = -1
+        for i_idx, d_vstream_info in enumerate(l_vstream_list):
+            if d_vstream_info != None and d_vstream_info['IS_MASTER'] == 1:
+                i_idx_master = i_idx
+                break
+        if i_idx_master == -1:
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
         oc_master_writer = CMuPaVideoWriter(
             s_data_root_dir,
             l_vstream_list[i_idx_master]['OUTPUT_FILE_PREFIX'],
@@ -180,21 +202,27 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         for i_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 if i_idx == i_idx_master:
-                    self.l_video_writers.append(oc_master_writer)
+                    self.l_video_writers[i_idx] = oc_master_writer
                     continue
-                self.l_video_writers.append(
-                    CMuPaVideoWriter(
-                        s_data_root_dir,
-                        l_vstream_list[i_idx]['OUTPUT_FILE_PREFIX'],
-                        l_vstream_list[i_idx]['FPS'],
-                        l_vstream_list[i_idx]['FRAME_WIDTH'],
-                        l_vstream_list[i_idx]['FRAME_HEIGHT'],
-                        master=oc_master_writer
-                    )
+                self.l_video_writers[i_idx] = CMuPaVideoWriter(
+                    s_data_root_dir,
+                    l_vstream_list[i_idx]['OUTPUT_FILE_PREFIX'],
+                    l_vstream_list[i_idx]['FPS'],
+                    l_vstream_list[i_idx]['FRAME_WIDTH'],
+                    l_vstream_list[i_idx]['FRAME_HEIGHT'],
+                    master=oc_master_writer
                 )
-            else:
-                self.l_video_writers.append(None) # *** WATCH OUT ***
-        self.b_recording = True
+
+    def write_next_frame(self, i_sink_id, na_frame):
+        self.l_video_writers[i_sink_id].write_next_frame(na_frame)
+
+    def write_time_stamp(self, i_sink_id, f_ts):
+        self.l_video_writers[i_sink_id].write_time_stamp(i_sink_id, f_ts)
+
+    def close(self):
+        for i_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap and self.l_video_writers[i_idx] != None:
+                self.l_video_writers[i_idx].close()
     #
 #
 
@@ -373,7 +401,8 @@ class CMainWindow(QtWidgets.QWidget):
             else:
                 self.l_wins.append(None)
 
-        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins)
+        self.oc_frame_writer = CMuStreamVideoWriter(l_do_capture)
+        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins, self.oc_frame_writer)
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win == None: continue
             oc_win.show()
@@ -411,10 +440,8 @@ class CMainWindow(QtWidgets.QWidget):
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Implement graceful recovery from failed grab()/retrieve() calls.
             # Estimate amount of dropped frames and implement correspondent counters.
-            # Move COpenCVmultiFrameCapThread into the 'common.capture'?
-            # Maybe not a good idea because COpenCVmultiFrameCapThread uses parts
-            # imported from mendouscopy, such as CMuPaVideoWriter. Decouple frame source
-            # from the frame sink?
+            # Switching from 'Recording' state to 'Preview' state is not supported.
+            # maybe add this later. Use start_new_session() method?
             # Implement 'settings_and_notes.dat' file generation. Run-time notes/events?
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
 
@@ -430,6 +457,7 @@ class CMainWindow(QtWidgets.QWidget):
         d_rec_info = {}
         d_rec_info['DATA_ROOT_DIR'] = self.s_data_root_dir
         d_rec_info['VSTREAM_LIST'] = l_vstream_list
+        self.oc_frame_writer.start_recording(d_rec_info)
         self.oc_frame_cap_thread.start_recording(d_rec_info)
 
     def __cb_on_btn_stop(self):
@@ -451,6 +479,7 @@ class CMainWindow(QtWidgets.QWidget):
             self.oc_frame_cap_thread.wait(10000)
             del self.oc_frame_cap_thread
             self.oc_frame_cap_thread = None
+            self.oc_frame_writer.close()
 
     def fatal_error(self, s_msg):
         self.__interrupt_threads_gracefully()
