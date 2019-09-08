@@ -200,24 +200,17 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 
 
 class CMainWindow(QtWidgets.QWidget):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, oc_global_cfg, *args, **kwargs):
         super(CMainWindow, self).__init__(*args, **kwargs)
-        self.oc_frame_cap_thread = None
-        self.l_wins = []
-        self.b_behavCamFound = False
-
-        s_config_fname = "mstools.ini" # TODO hard-coded for now.
-        if not os.path.isfile(s_config_fname):
-            raise OSError("Not a regular file: %s" % s_config_fname)
-        if not os.access(s_config_fname, os.R_OK):
-            raise OSError("Access denied for file: %s" % s_config_fname)
-
-        # load global configuration file
-        self.oc_global_cfg = configparser.ConfigParser()
-        self.oc_global_cfg.read(s_config_fname)
+        self.oc_global_cfg = oc_global_cfg
 
         self.s_data_root_dir = self.oc_global_cfg['general']['data_root_dir']
         self.s_data_root_dir = self.s_data_root_dir.strip()
+        self.f_initial_frame_rate = float(self.oc_global_cfg['general']['initial_frame_rate'])
+
+        self.oc_frame_cap_thread = None
+        self.l_wins = []
+        self.b_behavCamFound = False
 
         if not os.path.isdir(self.s_data_root_dir):
             os.mkdir(self.s_data_root_dir)
@@ -357,20 +350,25 @@ class CMainWindow(QtWidgets.QWidget):
 
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
             if l_do_capture[i_idx]:
-                s_cam_descr = oc_cam_info.description()
+                d_param = {}
+                d_param['description'] = oc_cam_info.description()
+                d_param['emulation_mode'] = False
+                d_param['is_master'] = l_is_master[i_idx]
+                d_param['initial_frame_rate'] = self.f_initial_frame_rate
 
                 # >>> window type selection depend on the present hardware <<<
-                if s_cam_descr.find("MINISCOPE") >= 0:
-                    self.l_wins.append(CMiniScopePreviewWindow(b_is_master=l_is_master[i_idx]))
+                if d_param['description'].find("MINISCOPE") >= 0:
+                    self.l_wins.append(CMiniScopePreviewWindow(d_param))
 
-                elif s_cam_descr.find("C310") >= 0:
-                    self.l_wins.append(CMiniScopePreviewWindow(b_is_master=l_is_master[i_idx], b_emulation_mode=True))
+                elif d_param['description'].find("C310") >= 0:
+                    d_param['emulation_mode'] = True
+                    self.l_wins.append(CMiniScopePreviewWindow(d_param))
 
-                elif s_cam_descr.find("Tape Recorder") >= 0:
-                    self.l_wins.append(CSillyCameraPreviewWindow(b_is_master=l_is_master[i_idx]))
+                elif d_param['description'].find("Tape Recorder") >= 0:
+                    self.l_wins.append(CSillyCameraPreviewWindow(d_param))
 
                 else:
-                    self.l_wins.append(CSmartCameraPreviewWindow(oc_cam_info, b_is_master=l_is_master[i_idx]))
+                    self.l_wins.append(CSmartCameraPreviewWindow(d_param, oc_cam_info))
                 # ------------------------------------------------------------
             else:
                 self.l_wins.append(None)
@@ -405,8 +403,9 @@ class CMainWindow(QtWidgets.QWidget):
             l_vstream_list.append(d_vstream_info)
             # TODO:
             # Warn user to change the frame rate values to all equal
-            # or synchronize all cameras to maser one here if possible.
-            # Set frame rate/size in GUI **before** calling start_preview() and do not allow runtime changes?
+            # or synchronize all cameras to the 'maser' one here if possible.
+            # Do not allow runtime changes of the frame rate / frame size?
+            # Add 'initial_frame_width' and 'initial_frame_height' handling in mstools.ini
             # Implement COpenCVmultiFrameCapThread.__cb_on_ioctl_requested() method
             # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
@@ -479,10 +478,20 @@ if __name__ == '__main__':
     if os.path.isdir(s_qt_plugin_path):
         os.environ['QT_PLUGIN_PATH'] = s_qt_plugin_path
 
+    s_config_fname = "mstools.ini" # TODO hard-coded for now.
+    if not os.path.isfile(s_config_fname):
+        raise OSError("Not a regular file: %s" % s_config_fname)
+    if not os.access(s_config_fname, os.R_OK):
+        raise OSError("Access denied for file: %s" % s_config_fname)
+
+    # load global configuration file
+    oc_global_cfg = configparser.ConfigParser()
+    oc_global_cfg.read(s_config_fname)
+
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("msCap")
 
-    oc_main_win = CMainWindow()
+    oc_main_win = CMainWindow(oc_global_cfg)
     oc_main_win.show()
     sys.exit(app.exec_())
 #

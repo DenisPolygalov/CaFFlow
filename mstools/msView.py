@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import configparser
 
 import PyQt5 # hint for pyinstaller
 from PyQt5 import QtGui
@@ -44,8 +45,11 @@ http://www.fsf.org/
 
 
 class CMainWindow(QtWidgets.QWidget):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, oc_global_cfg, *args, **kwargs):
         super(CMainWindow, self).__init__(*args, **kwargs)
+
+        self.oc_global_cfg = oc_global_cfg
+        self.f_initial_frame_rate = float(self.oc_global_cfg['general']['initial_frame_rate'])
 
         self.oc_frame_cap_thread = None
         self.win_preview = None
@@ -82,19 +86,24 @@ class CMainWindow(QtWidgets.QWidget):
             self.win_preview = None
 
         i_idx = self.cbox_cam_selector.currentIndex()
-        s_cam_descr = self.l_cameras[i_idx].description()
+        d_param = {}
+        d_param['description'] = self.l_cameras[i_idx].description()
+        d_param['emulation_mode'] = False
+        d_param['is_master'] = True
+        d_param['initial_frame_rate'] = self.f_initial_frame_rate
 
         # >>> window type selection depend on the present hardware <<<
-        if s_cam_descr.find("MINISCOPE") >= 0:
-            self.win_preview = CMiniScopePreviewWindow(b_enable_close_button=True)
+        if d_param['description'].find("MINISCOPE") >= 0:
+            self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
-        elif s_cam_descr.find("C310") >= 0:
-            self.win_preview = CMiniScopePreviewWindow(b_enable_close_button=True, b_emulation_mode=True)
+        elif d_param['description'].find("C310") >= 0:
+            d_param['emulation_mode'] = True
+            self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
-        elif s_cam_descr.find("Tape Recorder") >= 0:
-            self.win_preview = CSillyCameraPreviewWindow(b_enable_close_button=True)
+        elif d_param['description'].find("Tape Recorder") >= 0:
+            self.win_preview = CSillyCameraPreviewWindow(d_param, b_enable_close_button=True)
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
         else:
@@ -108,11 +117,11 @@ class CMainWindow(QtWidgets.QWidget):
             # To my knowledge QCamera does not provide low level access to video frames.
 
             # 2. Generic OpenCV based preview window
-            # self.win_preview = COpenCVPreviewWindow(b_enable_close_button=True)
+            # self.win_preview = COpenCVPreviewWindow(d_param, b_enable_close_button=True)
             # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
             # 3. Same as above but provide QCameraInfo and able to change frame rate/resolution
-            # self.win_preview = CSmartCameraPreviewWindow(self.l_cameras[i_idx], b_enable_close_button=True, b_is_master=True)
+            # self.win_preview = CSmartCameraPreviewWindow(d_param, self.l_cameras[i_idx], b_enable_close_button=True)
             # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
         # ------------------------------------------------------------
 
@@ -152,10 +161,20 @@ if __name__ == '__main__':
     if os.path.isdir(s_qt_plugin_path):
         os.environ['QT_PLUGIN_PATH'] = s_qt_plugin_path
 
+    s_config_fname = "mstools.ini" # TODO hard-coded for now.
+    if not os.path.isfile(s_config_fname):
+        raise OSError("Not a regular file: %s" % s_config_fname)
+    if not os.access(s_config_fname, os.R_OK):
+        raise OSError("Access denied for file: %s" % s_config_fname)
+
+    # load global configuration file
+    oc_global_cfg = configparser.ConfigParser()
+    oc_global_cfg.read(s_config_fname)
+
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName("msView")
 
-    oc_main_win = CMainWindow()
+    oc_main_win = CMainWindow(oc_global_cfg)
     oc_main_win.show()
     sys.exit(app.exec_())
 #

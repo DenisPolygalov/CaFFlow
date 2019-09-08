@@ -286,7 +286,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
     ioctlRequest = QtCore.pyqtSignal(dict)
 
-    def __init__(self, *args, b_is_master=False, b_enable_close_button=False, **kwargs):
+    def __init__(self, d_param, *args, b_enable_close_button=False, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
@@ -294,7 +294,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.oc_camera_info = None
         self.__frame_cap_thread = None
         self.__oc_canvas = None
-        self.b_is_master = b_is_master
+        self.b_is_master = d_param['is_master']
 
         # bottom status bar
         self.sbar = QtWidgets.QStatusBar(self)
@@ -399,25 +399,25 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
 
 
 class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, *args, **kwargs):
-        super(CSillyCameraPreviewWindow, self).__init__(*args, **kwargs)
-        self._INIT_FRATE_VAL = 20 # in Hz
+    def __init__(self, d_param, *args, **kwargs):
+        super(CSillyCameraPreviewWindow, self).__init__(d_param, *args, **kwargs)
+        self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
         # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
+        if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
     #
 #
 
 
 class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, oc_cam_info, *args, **kwargs):
-        super(CSmartCameraPreviewWindow, self).__init__(*args, **kwargs)
-        self._INIT_FRATE_VAL = 20 # in Hz
+    def __init__(self, d_param, oc_cam_info, *args, **kwargs):
+        super(CSmartCameraPreviewWindow, self).__init__(d_param, *args, **kwargs)
+        self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
         s_cam_descr = oc_cam_info.description()
 
         oc_cam = QCamera(oc_cam_info)
@@ -478,8 +478,8 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         # Get/Set INITIAL camera properties such as FPS and/or frame size here
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
+        if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
 
         i_curr_frate = int(self.get_cap_prop(cv.CAP_PROP_FPS))
         for i_idx in range(self.cbox_frame_rate.cbox.count()):
@@ -499,16 +499,15 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
 
 
 class CMiniScopePreviewWindow(COpenCVPreviewWindow):
-    def __init__(self, b_emulation_mode=False, *args, **kwargs):
-        super(CMiniScopePreviewWindow, self).__init__(*args, **kwargs)
+    def __init__(self, d_param, *args, **kwargs):
+        super(CMiniScopePreviewWindow, self).__init__(d_param, *args, **kwargs)
+        self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
 
         self._DEVICE_ID = 0x12
         self._RECORD_START = 0x01
         self._RECORD_END = 0x02
         self._TRIG_RECORD_EXT = 0x02
         self._SET_CMOS_SETTINGS = 0x03
-        self._INIT_FRATE_VAL = 20 # in Hz
-        self._INIT_FRATE_IDX = 3 # (20 Hz)
         self.t_frate_names = ("5 Hz", "10 Hz", "15 Hz", "20 Hz", "30 Hz", "60 Hz")
         self.t_frate_values = (0x11, 0x12, 0x13, 0x14, 0x15, 0x16)
         self.t_frate_val_Hz = (5, 10, 15, 20, 30, 60)
@@ -516,7 +515,16 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self._INIT_GAIN = 16
         self._INIT_EXCITATION = 0
 
-        self.b_emulation_mode = b_emulation_mode
+        b_is_FPS_supported = False
+        for i_init_frate_idx, i_FPS in enumerate(self.t_frate_val_Hz):
+            if i_FPS == int(self.f_initial_frame_rate):
+                self.i_init_frate_idx = i_init_frate_idx
+                b_is_FPS_supported = True
+                break
+        if not b_is_FPS_supported:
+            raise RuntimeError("Requested frame rate value (%s) is not supported by Miniscope hardware" % repr(self.f_initial_frame_rate))
+
+        self.b_emulation_mode = d_param['emulation_mode']
         if self.b_emulation_mode:
             self.setWindowTitle("Miniscope (EMULATION)")
         else:
@@ -526,7 +534,7 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
 
         self.cbox_frame_rate = CLabeledComboBox("Frame Rate:")
         self.cbox_frame_rate.cbox.addItems(self.t_frate_names)
-        self.cbox_frame_rate.cbox.setCurrentIndex(self._INIT_FRATE_IDX)
+        self.cbox_frame_rate.cbox.setCurrentIndex(self.i_init_frate_idx)
         self.cbox_frame_rate.cbox.currentIndexChanged.connect(self.__cb_on_frame_rate_cbox_index_changed)
         self.toolbar.addWidget(self.cbox_frame_rate)
         self.toolbar.addSeparator()
@@ -547,7 +555,7 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.addToolBar(self.toolbar)
 
     def __reset_UI(self):
-        self.cbox_frame_rate.cbox.setCurrentIndex(self._INIT_FRATE_IDX)
+        self.cbox_frame_rate.cbox.setCurrentIndex(self.i_init_frate_idx)
         self.sld_exposure.slider.setSliderPosition(self._INIT_EXPOSURE)
         self.sld_gain.slider.setSliderPosition(self._INIT_GAIN)
         self.sld_excitation.slider.setSliderPosition(self._INIT_EXCITATION)
@@ -590,7 +598,7 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # reset exposure (BRIGHTNESS)
         self.update_cap_prop(cv.CAP_PROP_BRIGHTNESS, self._INIT_EXPOSURE)
         # reset frame rate (SATURATION)
-        self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self._INIT_FRATE_IDX])
+        self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self.i_init_frate_idx])
 
     def get_vstream_info(self):
         d_vstream_info = super().get_vstream_info()
@@ -605,8 +613,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # Seems like Miniscope need the initial FPS to be set too,
         # in a way not consistent with it's further changes!
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self._INIT_FRATE_VAL) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self._INIT_FRATE_VAL)
+        if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
+            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
         #
     #
 #

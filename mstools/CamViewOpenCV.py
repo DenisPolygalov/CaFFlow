@@ -39,8 +39,8 @@ http://www.fsf.org/
 
 
 class CMainWindow(COpenCVPreviewWindow):
-    def __init__(self, *args, **kwargs):
-        super(CMainWindow, self).__init__(*args, **kwargs)
+    def __init__(self, d_param, *args, **kwargs):
+        super(CMainWindow, self).__init__(d_param, *args, **kwargs)
         self.i_frame_id = -1
         self.f_ts_prev = time.perf_counter()
 
@@ -68,7 +68,10 @@ if __name__ == '__main__':
         raise RuntimeError("No cameras found!")
 
     i_camera_idx = 0
-    oc_main_win = CMainWindow(b_enable_close_button=True)
+    d_param = {}
+    d_param['is_master'] = True
+
+    oc_main_win = CMainWindow(d_param, b_enable_close_button=True)
     oc_frame_cap_thread = COpenCVframeCaptureThread(i_camera_idx, oc_main_win)
     oc_main_win.start_preview(i_camera_idx, l_cameras[i_camera_idx], oc_frame_cap_thread)
     oc_frame_cap_thread.start()
