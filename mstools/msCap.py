@@ -113,7 +113,10 @@ class CMainWindow(QtWidgets.QWidget):
         item0 = QtWidgets.QTableWidgetItem(s_vsrc_name)
         item0.setFlags(item0.flags() & ~QtCore.Qt.ItemIsEditable)
         item1 = QtWidgets.QTableWidgetItem()
-        item2 = QtWidgets.QTableWidgetItem("disabled")
+        if len(self.l_caminfos) == 1:
+            item2 = QtWidgets.QTableWidgetItem("ENABLED")
+        else:
+            item2 = QtWidgets.QTableWidgetItem("disabled")
         item3 = QtWidgets.QTableWidgetItem()
         item3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
 

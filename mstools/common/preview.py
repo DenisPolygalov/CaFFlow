@@ -615,7 +615,11 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
         if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
             self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
-        #
+
+    def stop_preview(self):
+        # reset excitation LED power (HUE) to zero
+        self.update_cap_prop(cv.CAP_PROP_HUE, 0)
+        super().stop_preview()
     #
 #
 
