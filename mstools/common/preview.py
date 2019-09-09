@@ -618,7 +618,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
 
     def stop_preview(self):
         # reset excitation LED power (HUE) to zero
-        self.update_cap_prop(cv.CAP_PROP_HUE, 0)
+        if self.is_started():
+            self.update_cap_prop(cv.CAP_PROP_HUE, 0)
         super().stop_preview()
     #
 #

@@ -131,6 +131,9 @@ class CMainWindow(QtWidgets.QWidget):
             item1.setText("viCam%s" % self.__int2ABC(i_nrows + 1))
             item3.setCheckState(QtCore.Qt.Unchecked)
 
+        if len(self.l_caminfos) == 1:
+            item3.setCheckState(QtCore.Qt.Checked)
+
         self.oc_vsrc_table.setItem(i_nrows, 0, item0)
         self.oc_vsrc_table.setItem(i_nrows, 1, item1)
         self.oc_vsrc_table.setItem(i_nrows, 2, item2)
@@ -255,8 +258,10 @@ class CMainWindow(QtWidgets.QWidget):
             # or synchronize all cameras to the 'maser' one here if possible.
             # Do not allow runtime changes of the frame rate / frame size?
             # Add 'initial_frame_width' and 'initial_frame_height' handling in mstools.ini
+            # Note that implementing on-the-fly frame SIZE change require storage container (na_frame) reallocation!
             # Implement COpenCVmultiFrameCapThread.__cb_on_ioctl_requested() method
-            # Also, it might be necessary to call CMuPaVideoWriter.write_next_frame()
+            # Implement COpenCVframeCaptureThread.__cb_on_ioctl_requested() method
+            # Also, it might be necessary to call CMuStreamVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Implement graceful recovery from failed grab()/retrieve() calls.
             # Estimate amount of dropped frames and implement correspondent counters.
@@ -264,6 +269,9 @@ class CMainWindow(QtWidgets.QWidget):
             # maybe add this later. Use start_new_session() method?
             # Implement 'settings_and_notes.dat' file generation. Run-time notes/events?
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
+            # Setting excitation LED power (cv.CAP_PROP_HUE) to zero in stop_preview()
+            # does not work in msCap.py but does work in msView.py. Low level .get()
+            # method is being called in both cases. Hardware bug?
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
