@@ -91,3 +91,129 @@ class COpenCVframeCaptureThread(QtCore.QThread):
     #
 #
 
+
+class COpenCVmultiFrameCapThread(QtCore.QThread):
+    frameReady = QtCore.pyqtSignal(str)
+
+    def __init__(self, l_do_capture, l_wins, oc_sink_list, *args, **kwargs):
+        QtCore.QThread.__init__(self, *args, **kwargs)
+        self.t_do_capture = tuple(l_do_capture) # freeze it to prevent changes from outside
+        self.b_running = False
+        self.b_recording = False
+        self.l_cams = []
+        self.l_frames = []
+        self.l_frame_hwc = [] # list of len() == 3 tuples of frame HEIGHT x WIDTH x COLORS
+        self.i_frame_id = -1 # so valid frame numbers will start from zero
+        self.oc_sink_list = oc_sink_list
+        self.l_ts = []
+
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                self.l_cams.append(cv.VideoCapture(i_cam_idx))
+            else:
+                self.l_cams.append(None) # *** WATCH OUT ***
+
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                b_status, na_frame = self.l_cams[i_cam_idx].read()
+
+                if not b_status:
+                    raise RuntimeError("Unable to read first frame from camera number %i" % i_cam_idx)
+                if na_frame.ndim != 3 or na_frame.shape[2] != 3:
+                    raise RuntimeError("Unexpected frame shape: %s from camera number %i" % (repr(na_frame.shape), i_cam_idx))
+
+                self.l_frames.append(na_frame.copy())
+                self.l_frame_hwc.append((na_frame.shape[0], na_frame.shape[1], na_frame.shape[2]))
+                self.l_ts.append(0.0)
+
+            else:
+                self.l_frames.append(None) # *** WATCH OUT ***
+                self.l_frame_hwc.append((None, None, None)) # *** WATCH OUT ***
+                self.l_ts.append(None) # *** WATCH OUT ***
+
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                l_wins[i_cam_idx].ioctlRequest.connect(self.__cb_on_ioctl_requested, Qt.QueuedConnection)
+
+    def run(self):
+        self.b_running = True
+        while self.b_running:
+            if self.isInterruptionRequested():
+                self.b_recording = False
+                self.b_running = False
+                break
+
+            # grab new frame from each capture-enabled camera
+            for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+                if b_do_cap:
+                    b_status = self.l_cams[i_cam_idx].grab()
+                    if not b_status:
+                        raise RuntimeError("Unable to grab next frame from camera number %i" % i_cam_idx)
+
+            # retrieve and decode frame from each capture-enabled camera
+            for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+                if b_do_cap:
+                    b_status, self.l_frames[i_cam_idx][...] = self.l_cams[i_cam_idx].retrieve()
+                    self.l_ts[i_cam_idx] = time.perf_counter()
+                    if not b_status:
+                        # seems like this happen inevitably during frame rate/size change events
+                        raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
+
+            # push acquired frames into a sink(s) (not necessary files)
+            for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+                if b_do_cap and self.b_recording:
+                    self.oc_sink_list.write_next_frame(i_cam_idx, self.l_frames[i_cam_idx])
+                    self.oc_sink_list.write_time_stamp(i_cam_idx, self.l_ts[i_cam_idx])
+
+            self.i_frame_id += 1
+            self.frameReady.emit('frameReady') # argument doesn't matter
+
+        # Both - 'Preview' and 'Recording' states are done here.
+        # All preview windows will be destroyed and all video writers must be
+        # closed right after an instance of this class is done it's work.
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                self.l_cams[i_cam_idx].release()
+
+    def __cb_on_ioctl_requested(self, d_ioctl_data):
+        # print(d_ioctl_data)
+        pass
+
+    def __check_cam_or_die(self, i_cam_id):
+        if i_cam_id < 0 or i_cam_id >= len(self.l_cams):
+            raise ValueError("Unknown camera index: %i" % i_cam_id)
+        if not self.t_do_capture[i_cam_id]:
+            raise ValueError("Capture mode for camera number %i is not enabled" % i_cam_id)
+
+    def read_prop_sync(self, i_cam_id, i_prop_id):
+        self.__check_cam_or_die(i_cam_id)
+        return self.l_cams[i_cam_id].get(i_prop_id)
+
+    def update_prop_sync(self, i_cam_id, i_prop_id, prop_new_val):
+        self.__check_cam_or_die(i_cam_id)
+        prop_old = self.l_cams[i_cam_id].get(i_prop_id)
+        self.l_cams[i_cam_id].set(i_prop_id, prop_new_val)
+        prop_new = self.l_cams[i_cam_id].get(i_prop_id)
+        return (prop_old, prop_new)
+
+    def get_frame(self, i_cam_id):
+        self.__check_cam_or_die(i_cam_id)
+        return self.l_frames[i_cam_id]
+
+    def start_recording(self, d_rec_info):
+        s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
+        l_vstream_list  = d_rec_info['VSTREAM_LIST']
+        if len(l_vstream_list) != len(self.l_cams):
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        i_idx_master = -1
+        for i_idx, d_vstream_info in enumerate(l_vstream_list):
+            if d_vstream_info != None and d_vstream_info['IS_MASTER'] == 1:
+                i_idx_master = i_idx
+                break
+        if i_idx_master == -1:
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        self.b_recording = True
+    #
+#

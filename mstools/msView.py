@@ -120,7 +120,11 @@ class CMainWindow(QtWidgets.QWidget):
             # self.win_preview = COpenCVPreviewWindow(d_param, b_enable_close_button=True)
             # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
-            # 3. Same as above but provide QCameraInfo and able to change frame rate/resolution
+            # 3. For type of cameras that does not support parameter retrieval
+            # self.win_preview = CSillyCameraPreviewWindow(d_param, b_enable_close_button=True)
+            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+
+            # 4. Same as above but provide QCameraInfo and able to change frame rate/resolution
             # self.win_preview = CSmartCameraPreviewWindow(d_param, self.l_cameras[i_idx], b_enable_close_button=True)
             # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
         # ------------------------------------------------------------

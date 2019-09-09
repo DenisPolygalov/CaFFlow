@@ -151,3 +151,59 @@ class CMuPaVideoWriter(object):
     #
 #
 
+
+class CMuStreamVideoWriter(object):
+    def __init__(self, l_do_capture, *args, **kwargs):
+        self.t_do_capture = tuple(l_do_capture)
+        self.l_video_writers = []
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            self.l_video_writers.append(None)
+
+    def start_recording(self, d_rec_info):
+        s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
+        l_vstream_list  = d_rec_info['VSTREAM_LIST']
+        if len(l_vstream_list) != len(self.t_do_capture):
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        i_idx_master = -1
+        for i_idx, d_vstream_info in enumerate(l_vstream_list):
+            if d_vstream_info != None and d_vstream_info['IS_MASTER'] == 1:
+                i_idx_master = i_idx
+                break
+        if i_idx_master == -1:
+            raise RuntimeError("Sanity check failed. This should never happen.")
+
+        oc_master_writer = CMuPaVideoWriter(
+            s_data_root_dir,
+            l_vstream_list[i_idx_master]['OUTPUT_FILE_PREFIX'],
+            l_vstream_list[i_idx_master]['FPS'],
+            l_vstream_list[i_idx_master]['FRAME_WIDTH'],
+            l_vstream_list[i_idx_master]['FRAME_HEIGHT']
+        )
+
+        for i_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                if i_idx == i_idx_master:
+                    self.l_video_writers[i_idx] = oc_master_writer
+                    continue
+                self.l_video_writers[i_idx] = CMuPaVideoWriter(
+                    s_data_root_dir,
+                    l_vstream_list[i_idx]['OUTPUT_FILE_PREFIX'],
+                    l_vstream_list[i_idx]['FPS'],
+                    l_vstream_list[i_idx]['FRAME_WIDTH'],
+                    l_vstream_list[i_idx]['FRAME_HEIGHT'],
+                    master=oc_master_writer
+                )
+
+    def write_next_frame(self, i_sink_id, na_frame):
+        self.l_video_writers[i_sink_id].write_next_frame(na_frame)
+
+    def write_time_stamp(self, i_sink_id, f_ts):
+        self.l_video_writers[i_sink_id].write_time_stamp(i_sink_id, f_ts)
+
+    def close(self):
+        for i_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap and self.l_video_writers[i_idx] != None:
+                self.l_video_writers[i_idx].close()
+    #
+#
