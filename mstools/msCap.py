@@ -268,6 +268,8 @@ class CMainWindow(QtWidgets.QWidget):
             # Switching from 'Recording' state to 'Preview' state is not supported.
             # maybe add this later. Use start_new_session() method?
             # Implement 'settings_and_notes.dat' file generation. Run-time notes/events?
+            # Implement storage of video source parameters such as excitation, gain etc.
+            # upon clicking the "REC" button. Pass this information down to recorder sink.
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
             # Setting excitation LED power (cv.CAP_PROP_HUE) to zero in stop_preview()
             # does not work in msCap.py but does work in msView.py. Low level .get()

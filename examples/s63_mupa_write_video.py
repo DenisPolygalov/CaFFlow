@@ -25,6 +25,15 @@ along with this program; if not, a copy is available at
 http://www.fsf.org/
 """
 
+"""
+This script is designed for testing your PC hardware/software environment for
+ability to record MULTI-STREAM video using lossless compression (FFV1) codec.
+At least two video sources (web camera, Miniscope, etc) must be connected to
+your PC prior to execution of this script.
+The output video files will be saved in a sub-directory named automatically
+according to the time of execution of this script, e.g. ./2018-08-18_12-35-56
+"""
+
 
 def write_single_session(oc_vcap, oc_writer, i_nframes_max):
     i_frame_cnt = 0
