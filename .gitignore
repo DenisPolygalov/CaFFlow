@@ -12,3 +12,4 @@
 *.so
 .DS_Store
 ._*
+./v10n/output/*
