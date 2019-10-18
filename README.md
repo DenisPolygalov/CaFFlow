@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/181430093.svg)](https://zenodo.org/badge/latestdoi/181430093)
+
 # CaFFlow
 
 CaFFlow is a Python framework for acquisition and analysis of single-,
@@ -7,6 +9,16 @@ by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subse
 (offline and/or online) analysis of the acquired data.
 Currently however, it can be used for processing of wider range of frame streams,
 such as subject's behavior only, batch image/video editing etc.
+
+### Limitations
+
+As an open architecture system CaFFlow can be extended to fit various needs,
+but it's current implementation have certain limitations. Such as:
+
+- ROI shape expected to be more or less circular. Detecting ring-shaped ROIs is not supported.
+- ROI expected to be a cell body. Detecting Ca++ transients in dendrites/spines etc. is not supported.
+- matching ROIs across recording sessions is not __yet__ supported.
+- post-processing of the _dF/F_ traces is not __yet__ implemented.
 
 ### Repository layout
 
