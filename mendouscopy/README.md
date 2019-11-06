@@ -2,9 +2,9 @@ General concept behind the CaFFlow/mendouscopy framework is a well known idea of
 representing video stream as a flow of video frames propagating over a directed graph.
 This directory contain a set of Python classes each of which belong to one of 3 categories:
 
-- __frame source__
-- __frame processor__
-- __frame sink__
+-   __frame source__
+-   __frame processor__
+-   __frame sink__
 
 A __frame source__ is a Python object binded to a single or multiple video file(s),
 image(s), video camera(s) or network socket(s) and provides the next frame upon calling
