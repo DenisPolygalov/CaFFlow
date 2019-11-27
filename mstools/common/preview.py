@@ -203,7 +203,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
                 self.cbox_frame_rate.cbox.setCurrentIndex(i_idx)
 
     def fatal_error(self, s_msg):
-        if self.oc_camera != None: self.oc_camera.stop()
+        if self.oc_camera is not None: self.oc_camera.stop()
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
@@ -313,7 +313,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         sys.exit(-1)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
-        if self.__frame_cap_thread != None:
+        if self.__frame_cap_thread is not None:
             self.fatal_error("Preallocated camera object detected")
 
         self.i_camera_idx = i_camera_idx
@@ -341,7 +341,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         return d_vstream_info
 
     def update_cap_prop(self, i_prop_id, prop_new_val, b_async_call=False):
-        if self.__frame_cap_thread == None:
+        if self.__frame_cap_thread is None:
             raise ValueError("Unallocated camera object detected")
 
         if self.i_camera_idx < 0:

@@ -88,7 +88,7 @@ class CSideBySidePlayer(object):
         :param na_frame: image
         :return: no return, changes self.imgL
         """
-        if self.imgL == None:
+        if self.imgL is None:
             self.imgL = self.axL.imshow(na_frame)
         else:
             self.imgL.set_data(na_frame)
@@ -99,7 +99,7 @@ class CSideBySidePlayer(object):
         :param na_frame: image
         :return: no return, changes self.imgR
         """
-        if self.imgR == None:
+        if self.imgR is None:
             self.imgR = self.axR.imshow(na_frame)
         else:
             self.imgR.set_data(na_frame)
@@ -171,7 +171,6 @@ def main():
 if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
-    from mendouscopy.ioutils import enum_video_files
     from mendouscopy.mupamovie import CMuPaMovieCV
     from mendouscopy.behavior import CBehavPositionDetector
     import numpy as np

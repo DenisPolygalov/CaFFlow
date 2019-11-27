@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+
 import math
 import warnings
 import numpy as np

@@ -227,7 +227,7 @@ def register_frames_detect_rois(s_target_dir, oc_frame_source, d_param, s_out_fn
         oc_roi_mask_writer.write_next_frame(oc_roi_detector.na_mask_16U)
 
         i_frame_id += 1
-        if i_max_nframes != None and i_frame_id >= i_max_nframes: break
+        if i_max_nframes is not None and i_frame_id >= i_max_nframes: break
 
     oc_register_writer.close()
     oc_roi_fluo_writer.close()

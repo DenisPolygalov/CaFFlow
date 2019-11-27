@@ -5,7 +5,6 @@ import os
 import sys
 import json
 import time
-import pprint
 
 import PyQt5 # hint for pyinstaller
 from PyQt5.QtWidgets import QApplication

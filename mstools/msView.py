@@ -7,13 +7,8 @@ import time
 import configparser
 
 import PyQt5 # hint for pyinstaller
-from PyQt5 import QtGui
-from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
 from PyQt5.QtMultimedia import QCameraInfo
-
-import cv2 as cv
 
 from common.preview import CQCameraPreviewWindow
 from common.preview import COpenCVPreviewWindow
@@ -142,7 +137,7 @@ class CMainWindow(QtWidgets.QWidget):
     #
 
     def __interrupt_threads_gracefully(self):
-        if self.oc_frame_cap_thread != None:
+        if self.oc_frame_cap_thread is not None:
             self.oc_frame_cap_thread.requestInterruption()
             self.oc_frame_cap_thread.wait(10000)
             del self.oc_frame_cap_thread

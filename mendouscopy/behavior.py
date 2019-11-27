@@ -243,8 +243,8 @@ class CBehavPositionDetector(object):
 
         # handles when detector returns (None, None); returns unmodified image
         if len(t_xy) != 2:    return na_input
-        if t_xy[0] == None:   return na_input
-        if t_xy[1] == None:   return na_input
+        if t_xy[0] is None:   return na_input
+        if t_xy[1] is None:   return na_input
         if np.isnan(t_xy[0]): return na_input
         if np.isnan(t_xy[1]): return na_input
 
@@ -254,8 +254,9 @@ class CBehavPositionDetector(object):
 
         # horizontal and vertical size of array
         # na_input.shape = (101, 624, 3)
-        i_vsz, i_hsz, *_ = na_input.shape  # i_vsz: vertical width of image (around 100),
-                                           # i_hsz: horizontal length of image (around 600 pixels)
+        # i_vsz: vertical width of image (around 100),
+        # i_hsz: horizontal length of image (around 600 pixels)
+        i_vsz, i_hsz, *_ = na_input.shape
 
         # size of cross on top, bottom, left, right
         # if cross at the edge of image, modify to partial cross
@@ -326,8 +327,10 @@ def find_segments(na_x, f_thr_amp, i_thr_len):
 
     na_x_gt_thr_amp_bool = na_x >= f_thr_amp  # boolean ndarray: where na_x is greater than f_thr_amp
     na_x_gt_thr_amp      = np.array(list(map(np.int, na_x_gt_thr_amp_bool)))  # boolean converted to 0s and 1s
-    na_diff_x            = np.diff(na_x_gt_thr_amp)  # array of differences
-                                                     # 0: no change; 1: increase; -1: decrease
+    # array of differences
+    # 0: no change; 1: increase; -1: decrease
+    na_diff_x            = np.diff(na_x_gt_thr_amp)
+
     # example:
     # na_x:                  array([ 1,  3,  4,  6,  9, 10,  5,  3,  1])
     # f_thr_amp:             4
@@ -360,7 +363,7 @@ def find_segments(na_x, f_thr_amp, i_thr_len):
     if len(na_begs) != len(na_ends):
         raise ValueError("find_segments: algorithm error (2)")
 
-    na_diff_I = np.where(((na_ends - na_begs + 1) >= (i_thr_len + 1)) == True)[0]
+    na_diff_I = np.where(((na_ends - na_begs + 1) >= (i_thr_len + 1)) is True)[0]
     na_segments = np.column_stack((na_begs[na_diff_I], na_ends[na_diff_I]))  # ndarray of shape (M, 2) where M = number of segments
 
     return na_segments.astype(np.int64)

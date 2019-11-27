@@ -2,7 +2,6 @@
 
 
 import os
-import sys
 import time
 import datetime
 
@@ -103,7 +102,7 @@ class CMuPaVideoWriter(object):
         if na_in.ndim != 3 or na_in.shape[2] != 3:
             raise ValueError("Unexpected frame shape: %s" % repr(na_in.shape))
 
-        if not self.b_new_file_at_next_write and self.oc_video_writer == None:
+        if not self.b_new_file_at_next_write and self.oc_video_writer is None:
             raise ValueError("Unexpected state. Please contact developer(s)")
 
         if self.b_new_file_at_next_write:
@@ -128,16 +127,16 @@ class CMuPaVideoWriter(object):
             self.oc_master_writer.write_time_stamp(i_frame_src_idx, f_time_stamp)
 
     def close(self):
-        if self.oc_video_writer != None:
+        if self.oc_video_writer is not None:
             self.oc_video_writer.release()
             del self.oc_video_writer
             self.oc_video_writer = None
 
-        if self.h_ts_file != None:
+        if self.h_ts_file is not None:
             self.h_ts_file.close()
             self.h_ts_file = None
 
-        if self.s_out_ts_fname != None:
+        if self.s_out_ts_fname is not None:
             del self.s_out_ts_fname
             self.s_out_ts_fname = None
 
@@ -203,7 +202,7 @@ class CMuStreamVideoWriter(object):
 
     def close(self):
         for i_idx, b_do_cap in enumerate(self.t_do_capture):
-            if b_do_cap and self.l_video_writers[i_idx] != None:
+            if b_do_cap and self.l_video_writers[i_idx] is not None:
                 self.l_video_writers[i_idx].close()
     #
 #

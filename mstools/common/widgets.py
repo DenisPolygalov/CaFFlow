@@ -36,7 +36,7 @@ class CLabeledComboBox(QtWidgets.QWidget):
         super(CLabeledComboBox, self).__init__(*args, **kwargs)
 
         self.cbox = QtWidgets.QComboBox()
-        if l_cbox_items != None: self.cbox.addItems(l_cbox_items)
+        if l_cbox_items is not None: self.cbox.addItems(l_cbox_items)
 
         self.lbl = QtWidgets.QLabel()
         self.lbl.setText(s_label_text)

@@ -54,7 +54,6 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from mendouscopy.ioutils import enum_video_files
     from mendouscopy.pipelines import register_frames_detect_rois
     from mendouscopy.pipelines import pickup_rois_extract_fluo
     import numpy as np

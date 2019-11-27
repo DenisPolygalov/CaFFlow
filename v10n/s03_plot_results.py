@@ -164,7 +164,7 @@ if __name__ == '__main__':
 
     for i_section_idx, s_section in enumerate(l_sections):
         print()
-        if i_target_section != None and i_section_idx != i_target_section:
+        if i_target_section is not None and i_section_idx != i_target_section:
             print("INFO: skip section: [%s]" % s_section)
             continue
 

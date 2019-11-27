@@ -1,22 +1,15 @@
 #!/usr/bin/env python3
 
 
-import os
 import sys
 import time
 
 from PyQt5 import QtCore
-from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 
-from PyQt5.QtMultimedia import QCameraInfo, QCamera
-from PyQt5.QtMultimediaWidgets import QCameraViewfinder
-
 import cv2 as cv
 import numpy as np
-
-from .widgets import CLabeledComboBox
 
 
 """

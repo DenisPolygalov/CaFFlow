@@ -102,7 +102,7 @@ def process_video_file(s_fname_in, s_out_dir, s_out_fname_base, max_nframes=None
     while b_is_frame_ready:
         if i_frame_id % 100 == 0: print("INFO: process frame #%i HINT: press 'r' to reset and assign new ROI" % (i_frame_id))
 
-        if oc_tracker == None:
+        if oc_tracker is None:
             d_param['initial_frame_number'] = i_frame_id
             print("USER_INPUT_REQUEST: select object to be tracked")
             d_param['initial_ROI'] = selectROI_or_die(s_out_fname_base, oc_movie.na_frame)
@@ -156,7 +156,7 @@ def process_video_file(s_fname_in, s_out_dir, s_out_fname_base, max_nframes=None
         b_is_frame_ready = oc_movie.read_next_frame() # WATCH OUT for number of calls
         i_frame_id += 1
 
-        if max_nframes != None and i_frame_id >= max_nframes: break
+        if max_nframes is not None and i_frame_id >= max_nframes: break
     #
 
     if i_key_code == i_esc_key_code:

@@ -351,7 +351,6 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from mendouscopy.player import moshow
     from mendouscopy.mupamovie import CMuPaMovieTiff
     from mendouscopy.tiling import CBorderedFrame
     from mendouscopy.tiling import CStitchedFrame

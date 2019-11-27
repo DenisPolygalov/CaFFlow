@@ -208,7 +208,6 @@ def main():
 if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
-    from mendouscopy.player import moshow
     from mendouscopy.ioutils import enum_video_files
     from mendouscopy.mupamovie import CMuPaMovieTiff, CSingleTiffWriter
     main()

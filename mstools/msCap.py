@@ -11,12 +11,11 @@ from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtMultimedia import QCameraInfo, QCamera
+from PyQt5.QtMultimedia import QCameraInfo
 
 import cv2 as cv
 
 from common.widgets import CTableItemDelegate
-from common.preview import COpenCVPreviewWindow
 from common.preview import CSillyCameraPreviewWindow
 from common.preview import CSmartCameraPreviewWindow
 from common.preview import CMiniScopePreviewWindow
@@ -152,7 +151,7 @@ class CMainWindow(QtWidgets.QWidget):
         if i_ncols < 2:
             raise ValueError("Sanity check failed: %i" % i_ncols)
 
-        if self.oc_frame_cap_thread != None:
+        if self.oc_frame_cap_thread is not None:
             raise RuntimeError("Preallocated thread detected!")
 
         l_do_capture = []
@@ -175,7 +174,7 @@ class CMainWindow(QtWidgets.QWidget):
             item3.setCheckState(QtCore.Qt.Checked)
             l_is_master[0] = True
 
-        if not any(item == True for item in l_do_capture):
+        if not any(item is True for item in l_do_capture):
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
                 "No video source enabled.\nSet the 'Status' to 'ENABLE' for at least one video source.")
             return
@@ -281,7 +280,7 @@ class CMainWindow(QtWidgets.QWidget):
             self.btn_record.setEnabled(True)
             return
 
-        if self.oc_frame_cap_thread == None:
+        if self.oc_frame_cap_thread is None:
             raise RuntimeError("Unallocated thread detected!")
 
         d_rec_info = {}
