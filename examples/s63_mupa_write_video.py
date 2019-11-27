@@ -4,6 +4,7 @@
 import os
 import sys
 
+import cv2 as cv
 
 """
 Copyright (C) 2019 Denis Polygalov,
@@ -158,8 +159,6 @@ def test_multi_stream():
 #
 
 if __name__ == '__main__':
-    import cv2 as cv
-    import numpy as np
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.mupawrite import CMuPaVideoWriter
