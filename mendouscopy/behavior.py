@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+
 import warnings
 from collections import deque
 
 import cv2 as cv
 import numpy as np
+
 
 """
 Copyright (C) 2018,2019 Lilia Evgeniou, Denis Polygalov

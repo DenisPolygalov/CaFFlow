@@ -107,7 +107,7 @@ class CTiledFrame(object):
 class CStitchedFrame(object):
     def __init__(self, na_input, i_nrows, i_ncols, b_copy_input=False, i_border_sz=0):
         if len(na_input.shape) != 2: raise ValueError("Unsupported shape of the input array: %s" % repr(na_input.shape))
-        if i_border_sz % 2 == True: raise ValueError("Border size must be even integer. Yours is: %s" % repr(i_border_sz))
+        if i_border_sz % 2 is True: raise ValueError("Border size must be even integer. Yours is: %s" % repr(i_border_sz))
         if na_input.shape[0] % i_nrows != 0: raise ValueError("FRACTIONAL HORIZONTAL PARTITION")
         if na_input.shape[1] % i_ncols != 0: raise ValueError("FRACTIONAL VERTICAL PARTITION")
 

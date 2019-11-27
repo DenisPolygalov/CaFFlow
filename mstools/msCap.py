@@ -313,7 +313,7 @@ class CMainWindow(QtWidgets.QWidget):
     def closeEvent(self, event):
         self.__interrupt_threads_gracefully()
         for i_idx, oc_win in enumerate(self.l_wins):
-            if oc_win == None: continue
+            if oc_win is None: continue
             oc_win.close()
             del oc_win
             self.l_wins[i_idx] = None

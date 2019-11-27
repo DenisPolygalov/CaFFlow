@@ -78,7 +78,7 @@ class CMuPaVideoWriter(object):
         if not os.path.isdir(self.s_out_rses_dir):
             raise IOError("Unable to make/access recording session directory!")
 
-        if self.oc_master_writer == None:
+        if self.oc_master_writer is None:
             self.s_out_ts_fname = os.path.join(self.s_out_rses_dir, 'timestamp.dat')
             self.h_ts_file = open(self.s_out_ts_fname, 'w')
             self.h_ts_file.write('camNum\tframeNum\tsysClock\tbuffer\n')

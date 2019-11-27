@@ -208,7 +208,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         sys.exit(-1)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
-        if self.oc_camera != None:
+        if self.oc_camera is not None:
             self.fatal_error("Preallocated camera object detected")
 
         self.i_camera_idx = i_camera_idx
@@ -229,7 +229,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         self.setFixedSize(self.sizeHint())
 
     def stop_preview(self):
-        if self.oc_camera == None:
+        if self.oc_camera is None:
             return # this is correct logic, no error here
         self.oc_camera.stop()
         self.oc_camera.unload()
@@ -306,7 +306,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     #
 
     def fatal_error(self, s_msg):
-        if self.__frame_cap_thread != None:
+        if self.__frame_cap_thread is not None:
             self.__frame_cap_thread.requestInterruption()
             self.__frame_cap_thread.wait(10000)
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
@@ -325,7 +325,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.__oc_canvas)
 
     def get_cap_prop(self, i_prop_id):
-        if self.__frame_cap_thread == None:
+        if self.__frame_cap_thread is None:
             raise ValueError("Unallocated camera object detected")
         return self.__frame_cap_thread.read_prop_sync(self.i_camera_idx, i_prop_id)
 

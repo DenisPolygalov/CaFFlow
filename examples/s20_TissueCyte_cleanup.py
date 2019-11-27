@@ -81,7 +81,7 @@ def get_contour_mask(na_frame):
     # draw white mask on the black image
     for na_c in l_contours:
         # finds contour area
-        f_c_area = cv.contourArea(na_c)
+        # f_c_area = cv.contourArea(na_c)
 
         # fills the contour and draws it
         cv.fillPoly(na_contour_image, pts=[na_c], color=255)

@@ -4,7 +4,6 @@
 import time
 
 from PyQt5 import QtCore
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 
 import cv2 as cv
@@ -193,7 +192,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         return self.l_frames[i_cam_id]
 
     def start_recording(self, d_rec_info):
-        s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
+        # s_data_root_dir = d_rec_info['DATA_ROOT_DIR']
         l_vstream_list  = d_rec_info['VSTREAM_LIST']
         if len(l_vstream_list) != len(self.l_cams):
             raise RuntimeError("Sanity check failed. This should never happen.")
