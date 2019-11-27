@@ -3,7 +3,6 @@
 
 import os
 import sys
-import json
 import time
 
 import PyQt5 # hint for pyinstaller

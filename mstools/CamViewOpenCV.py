@@ -4,12 +4,10 @@ import os
 import sys
 import time
 
-
 import PyQt5 # hint for pyinstaller
 from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
 
-import cv2 as cv
 from common.preview import COpenCVPreviewWindow
 from common.capture import COpenCVframeCaptureThread
 

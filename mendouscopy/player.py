@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 
-import sys
-import time
 import cv2 as cv
 
 

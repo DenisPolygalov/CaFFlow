@@ -142,7 +142,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
             self.setFixedSize(self.sizeHint())
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
-        if self.oc_camera == None:
+        if self.oc_camera is None:
             self.fatal_error("Unallocated camera object detected")
         if self.b_guard: return
         f_res = float(self.cbox_frame_rate.cbox.itemText(i_idx))
@@ -367,7 +367,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.i_camera_idx = -1
 
     def is_started(self):
-        if self.__frame_cap_thread == None:
+        if self.__frame_cap_thread is None:
             return False
         return True
 

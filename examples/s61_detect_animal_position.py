@@ -158,7 +158,7 @@ def main():
         i_frame_id += 1
 
     # plot detected (X,Y) position values over frame number
-    fig = plt.figure()
+    plt.figure()
     ax = plt.subplot(1, 1, 1)
     ax.plot(np.array(oc_pos_det.l_position))
     plt.xlabel("Frame #")
@@ -174,7 +174,6 @@ if __name__ == '__main__':
     from mendouscopy.mupamovie import CMuPaMovieCV
     from mendouscopy.behavior import CBehavPositionDetector
     import numpy as np
-    import cv2 as cv
     import matplotlib.pyplot as plt
     main()
 #

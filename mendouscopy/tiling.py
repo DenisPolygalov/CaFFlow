@@ -370,7 +370,7 @@ def draw_border(na_frame, border_width=1, border_value=None):
     if border_width < 1:
         raise ValueError("Border width must be >= 1")
 
-    if border_value == None:
+    if border_value is None:
         border_value = na_frame.max(axis=None)
 
     na_frame[:, 0:border_width] = border_value

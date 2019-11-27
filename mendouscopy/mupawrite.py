@@ -2,7 +2,6 @@
 
 
 import os
-import time
 import datetime
 
 import cv2 as cv
@@ -95,7 +94,7 @@ class CMuPaVideoWriter(object):
         self.b_new_file_at_next_write = True
 
     def __del__(self):
-        if self.oc_video_writer != None:
+        if self.oc_video_writer is not None:
             self.oc_video_writer.release()
 
     def write_next_frame(self, na_in):
@@ -121,7 +120,7 @@ class CMuPaVideoWriter(object):
             self.b_new_file_at_next_write = True
 
     def write_time_stamp(self, i_frame_src_idx, f_time_stamp):
-        if self.oc_master_writer == None:
+        if self.oc_master_writer is None:
             self.h_ts_file.write('%i\t%i\t%i\t%i\n' % (i_frame_src_idx, self.i_out_frame_id_cumsum, round(1000 * f_time_stamp), 1))
         else:
             self.oc_master_writer.write_time_stamp(i_frame_src_idx, f_time_stamp)
@@ -166,7 +165,7 @@ class CMuStreamVideoWriter(object):
 
         i_idx_master = -1
         for i_idx, d_vstream_info in enumerate(l_vstream_list):
-            if d_vstream_info != None and d_vstream_info['IS_MASTER'] == 1:
+            if d_vstream_info is not None and d_vstream_info['IS_MASTER'] == 1:
                 i_idx_master = i_idx
                 break
         if i_idx_master == -1:

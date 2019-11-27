@@ -116,7 +116,7 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
         if i_frame_id % 100 == 0: print("process frame (extract fluorescence traces): %i" % i_frame_id)
         oc_roi_picker.extract_fluo_from_frame(oc_reg_movie.na_frame)
         i_frame_id += 1
-        if i_max_nframes != None and i_frame_id >= i_max_nframes: break
+        if i_max_nframes is not None and i_frame_id >= i_max_nframes: break
     oc_roi_picker.finalize_fluo()
 
     # save the results

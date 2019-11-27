@@ -3,17 +3,12 @@
 
 import os
 import sys
-import time
 import configparser
 
 import PyQt5 # hint for pyinstaller
-from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
 from PyQt5.QtMultimedia import QCameraInfo
-
-import cv2 as cv
 
 from common.widgets import CTableItemDelegate
 from common.preview import CSillyCameraPreviewWindow
@@ -243,7 +238,7 @@ class CMainWindow(QtWidgets.QWidget):
         # For 'disabled' cameras however, the self.l_wins contain None values.
         # Here we use the same approach to fill the l_vstream_list
         for i_idx, oc_win in enumerate(self.l_wins):
-            if oc_win == None:
+            if oc_win is None:
                 l_vstream_list.append(None) # *** WATCH OUT ***
                 continue
             d_vstream_info = oc_win.get_vstream_info()
@@ -292,7 +287,7 @@ class CMainWindow(QtWidgets.QWidget):
     def __cb_on_btn_stop(self):
         self.__interrupt_threads_gracefully()
         for i_idx, oc_win in enumerate(self.l_wins):
-            if oc_win == None: continue
+            if oc_win is None: continue
             oc_win.close()
             del oc_win
             self.l_wins[i_idx] = None
@@ -303,7 +298,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.btn_stop.setEnabled(False)
 
     def __interrupt_threads_gracefully(self):
-        if self.oc_frame_cap_thread != None:
+        if self.oc_frame_cap_thread is not None:
             self.oc_frame_cap_thread.requestInterruption()
             self.oc_frame_cap_thread.wait(10000)
             del self.oc_frame_cap_thread

@@ -141,7 +141,7 @@ def pre_filter_all_with_mocorr(s_in_fname, oc_rec_cfg):
         na_frame = cv.medianBlur(oc_movie.na_frame, i_median_flt_sz)
         na_frame_to_register = cv.normalize(na_frame, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
 
-        if oc_pw_ecc == None:
+        if oc_pw_ecc is None:
             oc_pw_ecc = CPieceWiseECC(
                 na_frame.shape[0], # frame height!
                 na_frame.shape[1], # frame width!
@@ -187,7 +187,6 @@ def pre_filter_all_with_mocorr(s_in_fname, oc_rec_cfg):
 if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
-    from mendouscopy.debug import DVAR
     from mendouscopy.player import moshow
     from mendouscopy.mupamovie import CMuPaMovieTiff
     from mendouscopy.filtering import CFastGuidedFilter

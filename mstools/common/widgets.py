@@ -97,7 +97,7 @@ class CLabeledSpinSlider(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def __cb_slider_released(self):
-        if self.callback_action != None:
+        if self.callback_action is not None:
             self.callback_action(self.slider.sliderPosition())
 
     def __cb_slider_value_changed(self, i_pos):
@@ -105,7 +105,7 @@ class CLabeledSpinSlider(QtWidgets.QWidget):
 
     def __cb_spin_value_changed(self, i_pos):
         self.slider.setSliderPosition(i_pos)
-        if not self.slider.isSliderDown() and self.callback_action != None:
+        if not self.slider.isSliderDown() and self.callback_action is not None:
             self.callback_action(i_pos)
     #
 #

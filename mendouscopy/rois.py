@@ -128,7 +128,7 @@ class CFrameWiseROIDetector(object):
                     # draw single FILLED contour inside of the self._na_mask_8U RIGHT AFTER you append() it!
                     cv.drawContours(self._na_mask_8U, self._l_ROI_candidates, len(self._l_ROI_candidates)-1, 255, thickness=cv.FILLED)
             
-            if b_new_ROI_found == False:
+            if b_new_ROI_found is False:
                 # no more contours found, so interrupt the loop
                 break
             else:

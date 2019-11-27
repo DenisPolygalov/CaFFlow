@@ -71,7 +71,7 @@ class CMainWindow(QtWidgets.QMainWindow):
         sys.exit(-1)
 
     def start_preview(self, i_cam_idx):
-        if self.oc_camera != None:
+        if self.oc_camera is not None:
             self.oc_camera.stop()
             del self.oc_camera
         self.oc_camera = QCamera(self.l_cameras[i_cam_idx])
@@ -81,7 +81,7 @@ class CMainWindow(QtWidgets.QMainWindow):
         self.oc_camera.start()
 
     def stop_preview(self):
-        if self.oc_camera == None:
+        if self.oc_camera is None:
             return # this is correct logic, no error here
         self.oc_camera.stop()
         self.oc_camera.unload()

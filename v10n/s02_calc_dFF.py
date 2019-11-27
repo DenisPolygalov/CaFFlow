@@ -49,7 +49,6 @@ def convert_tiff(s_fname_in, s_fname_out):
 if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
-    from mendouscopy.debug import DVAR
     from mendouscopy.pipelines import register_frames_detect_rois
     from mendouscopy.pipelines import pickup_rois_extract_fluo
 
@@ -66,7 +65,7 @@ if __name__ == '__main__':
 
     for i_section_idx, s_section in enumerate(l_sections):
         print()
-        if i_target_section != None and i_section_idx != i_target_section:
+        if i_target_section is not None and i_section_idx != i_target_section:
             print("INFO: skip section: [%s]" % s_section)
             continue
 

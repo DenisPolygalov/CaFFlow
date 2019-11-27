@@ -11,9 +11,9 @@ from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
 
 from common.preview import CQCameraPreviewWindow
-from common.preview import COpenCVPreviewWindow
+# from common.preview import COpenCVPreviewWindow
 from common.preview import CSillyCameraPreviewWindow
-from common.preview import CSmartCameraPreviewWindow
+# from common.preview import CSmartCameraPreviewWindow
 from common.preview import CMiniScopePreviewWindow
 from common.capture import COpenCVframeCaptureThread
 
@@ -127,7 +127,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)
         self.win_preview.show()
         self.win_preview.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)
-        if self.oc_frame_cap_thread != None:
+        if self.oc_frame_cap_thread is not None:
             self.oc_frame_cap_thread.start()
 
     def __cb_on_preview_closed(self):
@@ -150,7 +150,7 @@ class CMainWindow(QtWidgets.QWidget):
 
     def closeEvent(self, event):
         self.__interrupt_threads_gracefully()
-        if self.win_preview != None:
+        if self.win_preview is not None:
             self.win_preview.close()
 #
 
