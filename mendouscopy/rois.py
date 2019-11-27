@@ -146,7 +146,7 @@ class CFrameWiseROIDetector(object):
         # perform final ROI search by using the self._na_mask_8U as input
         _, l_contours, _ = cv.findContours(self._na_mask_8U, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
-        for i_contid in range(len(l_contours)):
+        for i_contid, _ in enumerate(l_contours):
             f_perimeter = cv.arcLength(l_contours[i_contid], True)
             if f_perimeter < 1e-3:
                 raise ValueError("Algorithm error! Unexpected input data!")
@@ -171,7 +171,7 @@ class CFrameWiseROIDetector(object):
             # (x, y) coordinates of Centroid of the ROI
             f_CoidX = t_idx_xy[0].sum() / t_idx_xy[0].size
             f_CoidY = t_idx_xy[1].sum() / t_idx_xy[1].size
-            
+
             # (x, y) coordinates of Center of Mass (fluorescence treated as density) of the ROI
             f_CoMx = (t_idx_xy[0] * na_fluo_per_pixel).sum() / i_fluo_per_ROI
             f_CoMy = (t_idx_xy[1] * na_fluo_per_pixel).sum() / i_fluo_per_ROI
@@ -473,7 +473,7 @@ class CMovieWiseWeightedROIPicker(object):
 
     def pickup(self, i_frame_id, d_roi_data, na_1f_mask):
         """
-        Accept dictionary of *lists* plural(!) of ROI parameters 
+        Accept dictionary of *lists* plural(!) of ROI parameters
         detected within a *single* frame.
         Test each ROI by using various criterias and append
         to the self... or reject.

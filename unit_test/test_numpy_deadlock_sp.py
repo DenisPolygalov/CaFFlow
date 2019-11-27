@@ -8,7 +8,7 @@ class CTestNumpyDeadlockSingleProc(unittest.TestCase):
         # https://github.com/numpy/numpy/issues/11041
         # https://github.com/numpy/numpy/issues/4813
         # https://github.com/numpy/numpy/issues/654
-        # 
+
         import numpy as np
         print("\nINFO: this test should be done in less than a minute...")
         n = 1024

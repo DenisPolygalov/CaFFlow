@@ -109,8 +109,7 @@ class CMuPaMovieCV(CMuPaMovie):
                 i_read_try_cnt += 1
                 if i_read_try_cnt >= 10:
                     raise ValueError("Unable to read frame from: %s" % self.t_file_names[idx])
-                #
-            #
+
             self.df_info.loc[idx, 'duration'] = hCap.get(cv.CAP_PROP_FRAME_COUNT)
             self.df_info.loc[idx, 'frames']   = int(hCap.get(cv.CAP_PROP_FRAME_COUNT))
             self.df_info.loc[idx, 'frame_rate'] = float(hCap.get(cv.CAP_PROP_FPS))
@@ -120,7 +119,6 @@ class CMuPaMovieCV(CMuPaMovie):
 
             l_vid_files.append( hCap )
             l_vid_streams.append( hCap )
-        #
 
         # check if all video files have the same frame width and height
         if self.df_info['width'].sum() != \
@@ -129,7 +127,6 @@ class CMuPaMovieCV(CMuPaMovie):
         if self.df_info['height'].sum() != \
            self.df_info['height'][0] * len(self.df_info['height']):
             raise ValueError("Frame height is not consistent across input video files")
-        #
 
         self.df_info['start'] = self.df_info['duration'].cumsum() - self.df_info['duration']
         self.df_info['end']   = self.df_info['duration'].cumsum()
@@ -148,21 +145,20 @@ class CMuPaMovieCV(CMuPaMovie):
 
         if b_verbose:
             print(self.df_info)
-        #
-    #
+
     def _seek_rel(self, file_idx, frame_num):
         b_ret = False
         if file_idx  >= len(self.t_file_names): return b_ret
         if frame_num >= self.df_info.at[file_idx, 'frames']: return b_ret
         return self.t_vid_streams[file_idx].set(cv.CAP_PROP_POS_FRAMES, frame_num)
-    #
+
     def _read_frame(self, file_idx, frame_num, b_do_seek=True):
         b_ret = False
         # set position to read the requested frame from requested video file
         if b_do_seek:
             b_ret = self._seek_rel(file_idx, frame_num)
             if not b_ret: return b_ret
-        
+
         # try to read the frame
         while True:
             b_ret, self.na_frame = self.t_vid_streams[file_idx].read()
@@ -176,17 +172,16 @@ class CMuPaMovieCV(CMuPaMovie):
                 # cv.waitKey(1000)
                 b_ret = self._seek_rel(file_idx, frame_num)
                 if not b_ret: return b_ret
-            #
-        #
+
         return b_ret
-    #
+
     def seek(self, abs_frame_num):
         b_ret = False
         rel_file_idx, rel_frame_num = self.abs2rel(abs_frame_num)
         if rel_file_idx  >= len(self.t_file_names): return b_ret
         if rel_frame_num >= self.df_info.at[rel_file_idx, 'frames']: return b_ret
         return self.t_vid_streams[rel_file_idx].set(cv.CAP_PROP_POS_FRAMES, rel_frame_num)
-    #
+
     def read_frame(self, abs_frame_num):
         """
         Read particular frame number into self.na_frame
@@ -194,7 +189,7 @@ class CMuPaMovieCV(CMuPaMovie):
         """
         rel_file_idx, rel_frame_num = self.abs2rel(abs_frame_num)
         return self._read_frame(rel_file_idx, rel_frame_num, b_do_seek=True)
-    #
+
     def read_next_frame(self):
         """
         Read next frame at the current position.
@@ -208,7 +203,7 @@ class CMuPaMovieCV(CMuPaMovie):
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False
         return b_ret
-    #
+
     def get_frame_stat(self):
         return "curr_abs_frame_num: %d\t curr_file_idx: %d\t curr_rel_frame_num: %d" % ( \
             self.i_curr_abs_frame_num, \
@@ -260,7 +255,6 @@ class CMuPaMovieTiff(CMuPaMovie):
         if self.df_info['height'].sum() != \
            self.df_info['height'][0] * len(self.df_info['height']):
             raise ValueError("Frame height is not consistent across input video files")
-        #
 
         self.df_info['start'] = self.df_info['duration'].cumsum() - self.df_info['duration']
         self.df_info['end']   = self.df_info['duration'].cumsum()
@@ -279,8 +273,7 @@ class CMuPaMovieTiff(CMuPaMovie):
 
         if b_verbose:
             print(self.df_info)
-        #
-    #
+
     def _read_frame(self, file_idx, frame_num):
         b_ret = False
         # try to read the frame
@@ -290,10 +283,10 @@ class CMuPaMovieTiff(CMuPaMovie):
         self.i_curr_abs_frame_num = self.rel2abs(self.i_curr_file_idx, self.i_curr_rel_frame_num)
         b_ret = True
         return b_ret
-    #
+
     def seek(self, abs_frame_num):
         raise NotImplementedError("To be implemented")
-    #
+
     def read_frame(self, abs_frame_num):
         """
         Read particular frame nubmer into self.na_frame
@@ -306,7 +299,7 @@ class CMuPaMovieTiff(CMuPaMovie):
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False
         return b_ret
-    #
+
     def read_next_frame(self):
         """
         Read next frame at the current position.
@@ -320,7 +313,7 @@ class CMuPaMovieTiff(CMuPaMovie):
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False
         return b_ret
-    #
+
     def get_frame_stat(self):
         return "curr_abs_frame_num: %d\t curr_file_idx: %d\t curr_rel_frame_num: %d" % ( \
             self.i_curr_abs_frame_num, \
@@ -368,7 +361,6 @@ class CMuPaMovieZF(CMuPaMovie):
         if self.df_info['height'].sum() != \
            self.df_info['height'][0] * len(self.df_info['height']):
             raise ValueError("Frame height is not consistent across input video files")
-        #
 
         self.df_info['start'] = self.df_info['duration'].cumsum() - self.df_info['duration']
         self.df_info['end']   = self.df_info['duration'].cumsum()
@@ -387,8 +379,7 @@ class CMuPaMovieZF(CMuPaMovie):
 
         if b_verbose:
             print(self.df_info)
-        #
-    #
+
     def _read_frame(self, file_idx, frame_num):
         b_ret = False
 
@@ -407,10 +398,10 @@ class CMuPaMovieZF(CMuPaMovie):
         self.i_curr_abs_frame_num = self.rel2abs(self.i_curr_file_idx, self.i_curr_rel_frame_num)
         b_ret = True
         return b_ret
-    #
+
     def seek(self, abs_frame_num):
         raise NotImplementedError("To be implemented")
-    #
+
     def read_frame(self, abs_frame_num):
         """
         Read particular frame nubmer into self.na_frame
@@ -423,7 +414,7 @@ class CMuPaMovieZF(CMuPaMovie):
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False
         return b_ret
-    #
+
     def read_next_frame(self):
         """
         Read next frame at the current position.
@@ -437,7 +428,7 @@ class CMuPaMovieZF(CMuPaMovie):
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False
         return b_ret
-    #
+
     def get_frame_stat(self):
         return "curr_abs_frame_num: %d\t curr_file_idx: %d\t curr_rel_frame_num: %d" % ( \
             self.i_curr_abs_frame_num, \

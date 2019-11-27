@@ -196,7 +196,7 @@ class CPrinCompWiper(object):
         self.i_frame_h = i_frame_h
         self.i_frame_w = i_frame_w
 
-        if (type(pcs2rm) is not list) and (type(pcs2rm) is not tuple):
+        if not isinstance(pcs2rm, list) and not isinstance(pcs2rm, tuple):
             raise TypeError("pcs2rm must be a list or a tuple")
         for pc in pcs2rm:
             if not isinstance(pc,int) or pc < 0:

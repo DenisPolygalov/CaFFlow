@@ -625,7 +625,7 @@ class CSingleSubjectTracker(object):
 
         # In the case of a tracking failure we return here in order to
         # give caller a choice - select another ROI and call restart_tracking()
-        # with the SAME frame or call skip_frame() if selection of a new ROI 
+        # with the SAME frame or call skip_frame() if selection of a new ROI
         # is not possible for the frame at which this tracking failure occured.
         # NOTE that skip_frame() does not advance the frame itself, only tracking data,
         # so it is the caller's responsibility to call process_frame() after skip_frame()

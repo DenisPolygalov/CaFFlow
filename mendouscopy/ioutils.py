@@ -40,18 +40,18 @@ def enum_video_files_dir(target_source, s_wildcard, i_num_pos=-1, b_verbose=Fals
 
     if len(l_file_names) == 0:
         raise OSError("No matching files found in: %s" % target_source)
-    #
+
     for s_fname in l_file_names:
         if not os.path.isfile(s_fname):
             raise OSError("Not a regular file: %s" % s_fname)
-        #
+
         if not os.access(s_fname, os.R_OK):
             raise OSError("Access denied for file: %s" % s_fname)
-        #
+
         fstat_info = os.stat(s_fname)
         if fstat_info.st_size == 0:
             raise OSError("The file is empty: %s" % s_fname)
-        #
+
         # os.path.split(s_fname)[-1] will be only the file name, i.e. 'mcCam2.avi' etc.
         l_numbers_in_fname = re.findall(r'\d+', os.path.split(s_fname)[-1])
 
@@ -75,17 +75,15 @@ def enum_video_files_dir(target_source, s_wildcard, i_num_pos=-1, b_verbose=Fals
         l_fnum_diff = [j - i for i, j in zip(l_sorted_file_numbers[:-1], l_sorted_file_numbers[1:])]
         if sum(l_fnum_diff) != len(l_fnum_diff):
             raise ValueError("Missing files (holes in numbering) found in: %s" % target_source)
-        #
 
     # another method
     if max(l_sorted_file_numbers) != len(l_sorted_file_names):
         raise ValueError("Missing files (length mismatch) found in: %s" % target_source)
-    #
+
     if b_verbose:
-        for i in range(len(l_file_names)):
+        for i, _ in enumerate(l_file_names):
             print("DEBUG: %s\t%d\t%s" % (l_file_names[i], l_file_numbers[i], l_sorted_file_names[i]))
-        #
-    #
+
     return tuple(l_sorted_file_names)
 #
 
@@ -95,7 +93,7 @@ def enum_video_files_txt(target_source):
     """
     if not os.access(target_source, os.R_OK):
         raise OSError("Access denied for file: %s" % target_source)
-    #
+
     l_out_file_names = []
     with open(target_source, 'r') as f:
         for s_fname in f:
@@ -105,11 +103,10 @@ def enum_video_files_txt(target_source):
             if not os.path.isfile(s_fname): raise OSError("Not a regular file: %s" % s_fname)
             if not os.access(s_fname, os.R_OK): raise OSError("Access denied for file: %s" % s_fname)
             l_out_file_names.append(s_fname)
-        #
-    #
+
     if len(l_out_file_names) == 0:
         raise OSError("No input files found in: %s" % target_source)
-    #
+
     return tuple(l_out_file_names)
 #
 
@@ -124,8 +121,8 @@ def enum_video_files(target_source, s_wildcard, i_num_pos=-1, b_verbose=False):
     >>> t_files = enum_video_files("subject_12/4_6_2017/H14_M31_S15", "msCam*.avi")
     >>> t_files = enum_video_files("H14_M31_S15", "behavCam*.avi")
     >>> t_files = enum_video_files("file_list.txt", None)
-    Note that no additional sorting will be applied in the case of 
-    loading from a text file. Files names will be loaded as is.
+    Note that no additional sorting will be applied in the case of
+    loading from a text file. Files names will be loaded as is
     """
     if os.path.isdir(target_source):
         return enum_video_files_dir(target_source, s_wildcard, i_num_pos=i_num_pos, b_verbose=b_verbose)

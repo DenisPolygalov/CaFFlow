@@ -577,7 +577,7 @@ class CPieceWiseECC(object):
         self.na_pw_dist = np.zeros([self.i_nrow_tiles, self.i_ncol_tiles], np.float32)
 
         # Output, matrix of booleans representing "warp flags"
-        # each flag set to True if and only if the estimated shift between 
+        # each flag set to True if and only if the estimated shift between
         # adjacent patches is less than the maximal shift allowed: self.f_max_shift
         self.na_do_warp = np.zeros([self.i_nrow_tiles, self.i_ncol_tiles], np.bool)
 

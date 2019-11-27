@@ -73,7 +73,7 @@ class CTiledFrame(object):
             return
 
         i_row, i_col = t_addr[0], t_addr[1]
-        
+
         if self._b_have_color_data:
             self._na_data[ \
                 self._Ridx[i_row]:self._Ridx[i_row + 1], \

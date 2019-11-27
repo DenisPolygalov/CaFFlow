@@ -15,7 +15,7 @@ class CTestNumpyDeadlockMultiProc(unittest.TestCase):
         # https://github.com/numpy/numpy/issues/11041
         # https://github.com/numpy/numpy/issues/4813
         # https://github.com/numpy/numpy/issues/654
-        # 
+
         print("\nINFO: this test should be done in less than a minute...")
         print("INFO: Numpy version: %s" % np.version.full_version)
         num_of_proc = mp.cpu_count()

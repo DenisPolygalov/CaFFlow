@@ -70,10 +70,10 @@ def main():
         oc_pc1_wiper.process_frame(oc_movie.na_frame)
         oc_register.process_frame(oc_pc1_wiper.na_out)
         oc_register.register_frame()
-        
+
         na_frame_before = cv2.normalize(oc_movie.na_frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
         na_frame_after = cv2.normalize(oc_register.na_out_reg, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        
+
         l_frames.append(np.vstack([na_frame_before, na_frame_after]))
         i_frame_id += 1
         # if i_frame_id >= 30: break

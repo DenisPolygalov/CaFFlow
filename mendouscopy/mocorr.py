@@ -71,8 +71,8 @@ def bin_median(na_input, i_win_sz=10, b_exclude_nans=True):
 
 def bootstrap_template(oc_movie, i_tmpl_nframes, s_method="head", i_color_ch=0, b_verbose=False):
     """
-    Read 'i_tmpl_nframes' frames from multi-part movie object 'oc_movie' 
-    by using method 's_method'. Input frames will be converted to, and output is 
+    Read 'i_tmpl_nframes' frames from multi-part movie object 'oc_movie'
+    by using method 's_method'. Input frames will be converted to, and output is
     returned as 3D array of (TIME x FRAME_HEIGHT x FRAME_WIDTH) shape and np.float32 type.
     Only single color/grayscale/np.float32 type of input supported.
     """
@@ -109,9 +109,8 @@ def bootstrap_template(oc_movie, i_tmpl_nframes, s_method="head", i_color_ch=0, 
         )
 
     for tt, idx in enumerate(na_indices):
-
         oc_movie.read_frame(idx) # read the next requested frame
-        
+
         if len(oc_movie.na_frame.shape) == 3:
             if i_color_ch >= oc_movie.na_frame.shape[2]:
                  raise ValueError("Color channel mismatch: i_color_ch=%d oc_movie.na_frame.shape=%s" % (i_color_ch, repr(oc_movie.na_frame.shape)))
