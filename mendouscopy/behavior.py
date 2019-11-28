@@ -256,7 +256,7 @@ class CBehavPositionDetector(object):
         # na_input.shape = (101, 624, 3)
         # i_vsz: vertical width of image (around 100),
         # i_hsz: horizontal length of image (around 600 pixels)
-        i_vsz, i_hsz, *_ = na_input.shape
+        i_vsz, i_hsz, _ = na_input.shape
 
         # size of cross on top, bottom, left, right
         # if cross at the edge of image, modify to partial cross

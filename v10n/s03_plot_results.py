@@ -139,7 +139,7 @@ def plot_result(s_input_dir, s_fname_prefix):
     for s_key in d_fluo_data.keys():
         DVAR(d_fluo_data[s_key], s_var_name=s_key)
 
-    oc_data_viewer = CSimpleDataViewer(d_fluo_data)
+    CSimpleDataViewer(d_fluo_data)
     plt.savefig(s_out_fname, dpi=300, quality=100, bbox_inches='tight')
     plt.show()
 #

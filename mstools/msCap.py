@@ -5,7 +5,7 @@ import os
 import sys
 import configparser
 
-import PyQt5 # hint for pyinstaller
+# import PyQt5 # hint for pyinstaller
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
@@ -221,7 +221,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_frame_writer = CMuStreamVideoWriter(l_do_capture)
         self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins, self.oc_frame_writer)
         for i_idx, oc_win in enumerate(self.l_wins):
-            if oc_win == None: continue
+            if oc_win is None: continue
             oc_win.show()
             oc_win.start_preview(i_idx, self.l_caminfos[i_idx], self.oc_frame_cap_thread)
 

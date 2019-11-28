@@ -69,7 +69,7 @@ class CMuPaVideoWriter(object):
         self.close()
 
         # e.g. ./data/2019-04-16_16-12-34/H16_M12_S34
-        if self.oc_master_writer == None:
+        if self.oc_master_writer is None:
             self.s_out_rses_dir = os.path.join(self.s_out_root_dir, datetime.datetime.now().strftime('H%H_M%M_S%S'))
             os.mkdir(self.s_out_rses_dir)
         else:

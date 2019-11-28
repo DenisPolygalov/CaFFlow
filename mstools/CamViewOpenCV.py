@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-import PyQt5 # hint for pyinstaller
+# import PyQt5 # hint for pyinstaller
 from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
 

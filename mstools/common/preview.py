@@ -126,7 +126,7 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.oc_view_finder)
 
     def __cb_on_resolution_cbox_index_changed(self, i_idx):
-        if self.oc_camera == None:
+        if self.oc_camera is None:
             self.fatal_error("Unallocated camera object detected")
         if self.b_guard: return
         l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
@@ -358,7 +358,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             self.sbar.showMessage("%s -> %s" % (repr(prop_old), repr(prop_new)), 3000)
 
     def stop_preview(self):
-        if self.__frame_cap_thread == None:
+        if self.__frame_cap_thread is None:
             return # this is correct logic, no error here
 
         self.__frame_cap_thread.frameReady.disconnect(self.frameReady)

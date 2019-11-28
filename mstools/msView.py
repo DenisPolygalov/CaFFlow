@@ -5,7 +5,7 @@ import os
 import sys
 import configparser
 
-import PyQt5 # hint for pyinstaller
+# import PyQt5 # hint for pyinstaller
 from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
 
@@ -74,7 +74,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.btn_preview.setEnabled(False)
         self.cbox_cam_selector.setEnabled(False)
 
-        if self.win_preview != None:
+        if self.win_preview is not None:
             self.win_preview.close()
             del self.win_preview
             self.win_preview = None

@@ -5,7 +5,7 @@ import os
 import sys
 import time
 
-import PyQt5 # hint for pyinstaller
+# import PyQt5 # hint for pyinstaller
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtMultimedia import QCameraInfo, QCamera
 
@@ -193,6 +193,7 @@ def camera_sync_stop_and_unload(oc_qcamera):
 
 def main():
     app = QApplication(sys.argv) # must be called in order to be able to use all the stuff below(!)
+    print("The application is executed on: %s" % app.platformName())
     l_cameras = QCameraInfo.availableCameras()
     if len(l_cameras) == 0:
         print("ERROR: no cameras found")
