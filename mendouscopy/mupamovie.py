@@ -197,7 +197,7 @@ class CMuPaMovieCV(CMuPaMovie):
         """
         rel_file_idx, rel_frame_num = self.abs2rel(self.i_next_abs_frame_num)
         b_ret = self._read_frame(rel_file_idx, rel_frame_num, b_do_seek=False)
-        if b_ret == True:
+        if b_ret is True:
             self.i_next_abs_frame_num += 1
             if self.i_next_abs_frame_num > self.na_ends[-1]:
                 b_ret = False

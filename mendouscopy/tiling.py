@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 
+import ast
+
 import numpy as np
 import cv2 as cv
 
@@ -50,7 +52,7 @@ class CTiledFrame(object):
     #
 
     def __getitem__(self, t_addr):
-        if type(t_addr) == type(...):
+        if isinstance(t_addr, ast.Ellipsis):
             return self._na_data # [...]
 
         i_row, i_col = t_addr[0], t_addr[1]
@@ -68,7 +70,7 @@ class CTiledFrame(object):
     #
 
     def __setitem__(self, t_addr, na_data):
-        if type(t_addr) == type(...):
+        if isinstance(t_addr, ast.Ellipsis):
             self._na_data[...] = na_data[...]
             return
 

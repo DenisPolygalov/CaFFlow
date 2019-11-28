@@ -45,7 +45,7 @@ class CMuPaVideoWriter(object):
         self.b_new_file_at_next_write = False
 
         # e.g. ./data/2019-04-16_16-12-34
-        if self.oc_master_writer == None:
+        if self.oc_master_writer is None:
             self.s_out_root_dir = os.path.join(self.s_root_dir, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
             os.mkdir(self.s_out_root_dir)
         else:

@@ -587,7 +587,7 @@ class CSingleSubjectTracker(object):
         elif self.s_tracker_type == "CSRT":
             self.oc_tracker = cv.TrackerCSRT_create()
         else:
-            raise TypeError("Unsupported tracker type: %s" % d_param['tracker_type'])
+            raise TypeError("Unsupported tracker type: %s" % self.s_tracker_type)
 
     def __process_ROI(self, t_ROI):
         if tuple is not type(t_ROI) or len(t_ROI) != 4:
