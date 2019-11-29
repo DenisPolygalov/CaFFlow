@@ -75,7 +75,7 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_vsrc_table.horizontalHeader().setSectionResizeMode(3, QtWidgets.QHeaderView.Fixed)
         self.oc_vsrc_table.verticalHeader().hide()
 
-        for i_idx, oc_cam_info in enumerate(self.l_caminfos):
+        for _, oc_cam_info in enumerate(self.l_caminfos):
             self.__add_new_row_to_vsrc_table(oc_cam_info.description())
         self.oc_vsrc_table.resizeColumnsToContents()
 

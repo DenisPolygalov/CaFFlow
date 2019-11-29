@@ -43,7 +43,7 @@ def moshow(s_winname, iterable_frame_set):
 
     while True:
         key = cv.waitKey(0)
-        
+
         if key == ord('q'):
             break
         elif key == ord('n'):
