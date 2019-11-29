@@ -12,8 +12,8 @@ class CTestNumpyDeadlockSingleProc(unittest.TestCase):
         import numpy as np
         print("\nINFO: this test should be done in less than a minute...")
         n = 1024
-        tmp1 = np.identity(n)
-        tmp2 = np.linalg.inv(tmp1)
+        self.tmp1 = np.identity(n)
+        self.tmp2 = np.linalg.inv(self.tmp1)
         print("INFO: Done! The test PASSED.")
     #
 #

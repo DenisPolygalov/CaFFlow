@@ -286,7 +286,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     closeSignal = QtCore.pyqtSignal()
     ioctlRequest = QtCore.pyqtSignal(dict)
 
-    def __init__(self, d_param, *args, b_enable_close_button=False, **kwargs):
+    def __init__(self, d_param, b_enable_close_button=False, *args, **kwargs):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 

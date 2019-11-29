@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+
 import unittest
 import multiprocessing as mp
 import numpy as np
 
+
 def target_func(n):
     tmp1 = np.identity(n)
     tmp2 = np.linalg.inv(tmp1)
+    return tmp2
 #
 
 class CTestNumpyDeadlockMultiProc(unittest.TestCase):

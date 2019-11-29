@@ -32,7 +32,7 @@ http://www.fsf.org/
 
 
 class CLabeledComboBox(QtWidgets.QWidget):
-    def __init__(self, s_label_text, *args, l_cbox_items=None, **kwargs):
+    def __init__(self, s_label_text, l_cbox_items=None, *args, **kwargs):
         super(CLabeledComboBox, self).__init__(*args, **kwargs)
 
         self.cbox = QtWidgets.QComboBox()
