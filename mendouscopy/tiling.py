@@ -44,7 +44,7 @@ class CTiledFrame(object):
         self._i_ncols = i_ncols
         self._Ridx = np.linspace(0, na_input.shape[0], (i_nrows + 1), dtype=np.int)
         self._Cidx = np.linspace(0, na_input.shape[1], (i_ncols + 1), dtype=np.int)
-        
+
         if   len(na_input.shape) == 3: self._b_have_color_data = True
         elif len(na_input.shape) == 2: self._b_have_color_data = False
         else: raise ValueError("Unsupported shape of the input array: %s" % repr(na_input.shape))

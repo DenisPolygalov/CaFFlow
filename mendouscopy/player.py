@@ -31,7 +31,7 @@ def moshow(s_winname, iterable_frame_set):
     s_winname - string, the window name.
     iterable_frame_set - an iterable object (Python list in simplest case).
     Other types of iterable containers (such as tuple) may work too.
-    Each member of iterable_frame_set is a movie frame (image) to show 
+    Each member of iterable_frame_set is a movie frame (image) to show
     provided in a format acceptable by cv.imshow() function.
     Note that this function will lock execution and switch into interactive
     mode so you can switch between frames by pressing (n)ext and (p)revious

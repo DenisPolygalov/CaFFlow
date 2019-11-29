@@ -68,7 +68,7 @@ class CLabeledPushButton(QtWidgets.QWidget):
 
 
 class CLabeledSpinSlider(QtWidgets.QWidget):
-    def __init__(self, s_label_text, t_range, i_step, *args, spin_min_w=45, cb_action=None, **kwargs):
+    def __init__(self, s_label_text, t_range, i_step, spin_min_w=45, cb_action=None, *args, **kwargs):
         super(CLabeledSpinSlider, self).__init__(*args, **kwargs)
         self.callback_action = cb_action
 

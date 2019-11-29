@@ -160,7 +160,7 @@ def pre_filter_all_with_mocorr(s_in_fname, oc_rec_cfg):
         oc_pw_ecc.register_frame()
         # you can register frames with background left untouched, for debugging
         # oc_pw_ecc.register_frame(na_input=na_frame_to_register)
-        
+
         if i_frame_id < 3:
             plt.subplot(221)
             plt.imshow(oc_pw_ecc.d_REG['PW_REG_corr_coef'][-1])

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-import os
 import sys
 import time
 
@@ -10,11 +9,10 @@ from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 
-from PyQt5.QtMultimedia import QCameraInfo, QCamera
+from PyQt5.QtMultimedia import QCamera
 from PyQt5.QtMultimediaWidgets import QCameraViewfinder
 
 import cv2 as cv
-import numpy as np
 
 from .widgets import CLabeledComboBox
 from .widgets import CLabeledSpinSlider
@@ -39,6 +37,30 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, a copy is available at
 http://www.fsf.org/
 """
+
+
+def status2str(status):
+    if status == QCamera.ActiveStatus:
+        return "ActiveStatus"
+    elif status == QCamera.StartingStatus:
+        return "StartingStatus"
+    elif status == QCamera.StandbyStatus:
+        return "StandbyStatus"
+    elif status == QCamera.LoadedStatus:
+        return "LoadedStatus"
+    elif status == QCamera.LoadingStatus:
+        return "LoadingStatus"
+    elif status == QCamera.UnloadingStatus:
+        return "UnloadingStatus"
+    elif status == QCamera.StoppingStatus:
+        return "StoppingStatus"
+    elif status == QCamera.UnloadedStatus:
+        return "UnloadedStatus"
+    elif status == QCamera.UnavailableStatus:
+        return "UnavailableStatus"
+    else:
+        return "UNKNOWN STATUS"
+#
 
 
 # These two functions are to be used privately, in this file only,

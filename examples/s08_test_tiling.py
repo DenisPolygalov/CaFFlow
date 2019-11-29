@@ -218,7 +218,7 @@ def test_stitching_synthetic_data():
     # the input image
     na_img = np.zeros(i_nrows * i_ncols, dtype=np.int).reshape(i_nrows, i_ncols)
 
-    # this tiled image is used only for generation of testing data 
+    # this tiled image is used only for generation of testing data
     oc_tiled_img = CTiledFrame(na_img, i_nrow_tiles, i_ncol_tiles)
     for ix, iy in np.ndindex(oc_tiled_img.shape):
         oc_tiled_img[ix, iy] += (ix * iy)
