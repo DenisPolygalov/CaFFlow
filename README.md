@@ -11,7 +11,7 @@ by [Miniscope](http://miniscope.org) miniature fluorescence microscope and subse
 Currently however, it can be used for processing of wider range of frame streams,
 such as subject's behavior only, batch image/video editing etc.
 
-### Limitations
+## Limitations
 
 As an open architecture system CaFFlow can be extended to fit various needs,
 but it's current implementation have certain limitations. Such as:
@@ -58,16 +58,16 @@ editor for the git client. All other options may be left default.
 
 Activate the Git LFS extension.
 
-_Windows:_
+Windows:
 
 -   launch the `git` client application and run: `$ git lfs install`
 
-_MacOS:_
+MacOS:
 
 -   if you use Homebrew, open terminal and run: `$ brew install git-lfs`
 -   if you use MacPorts, open terminal and run: `$ port install git-lfs`
 
-_FreeBSD:_
+FreeBSD:
 
 -   Open terminal and run: `$ pkg install git-lfs && git lfs install`
 
@@ -83,7 +83,7 @@ Note that if you plan to use GUI-based (PyQt) applications included into CaFFlow
 
 Create and activate new 'Conda environment':
 
-_Windows:_
+Windows:
 
 Launch 'Anaconda Prompt' from Windows Start Menu and type:
 
@@ -91,7 +91,7 @@ Launch 'Anaconda Prompt' from Windows Start Menu and type:
 
 `(base)> conda activate cafflow`
 
-_MacOS:_
+MacOS:
 
 Launch the 'Terminal' application and type:
 

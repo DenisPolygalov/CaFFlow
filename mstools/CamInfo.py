@@ -277,6 +277,7 @@ if __name__ == '__main__':
     else:
         print("INFO: QT_PLUGIN_PATH was not altered")
     main()
-    os.system("PAUSE")
+    print("Press ENTER to continue...")
+    input()
 #
 
