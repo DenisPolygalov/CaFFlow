@@ -134,6 +134,12 @@ def main():
     s_wcard_in  = "downsampled-McHugh_Lab_181_614_S000*_L01_ch03.tif"
     s_fname_out = "downsampled-McHugh_Lab_181_614_L01_ch03.tif"
 
+    if not os.path.isdir(s_input_dir):
+        print("This script require presence of big size input files.")
+        print("Seems like you don't have these files stored at expected location.")
+        print("If you REALLY need these files please contact me. Exiting...")
+        sys.exit(0)
+
     print("Input directory:\t%s" % s_input_dir)
 
     t_input_files = enum_video_files(s_input_dir, s_wcard_in, i_num_pos=2)
