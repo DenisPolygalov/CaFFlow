@@ -36,8 +36,9 @@ class COpenCVframeCaptureThread(QtCore.QThread):
 
     def __init__(self, i_camera_idx, h_win, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
+        self.i_camera_idx = i_camera_idx
         self.b_running = False
-        self.oc_camera = cv.VideoCapture(i_camera_idx)
+        self.oc_camera = cv.VideoCapture(self.i_camera_idx)
         self.i_frame_id = -1 # so valid frame numbers will start from zero
 
         b_status, self.na_frame = self.oc_camera.read()
@@ -47,6 +48,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
         if self.na_frame.ndim != 3 or self.na_frame.shape[2] != 3:
             raise RuntimeError("Unexpected frame shape: %s" % repr(self.na_frame.shape))
 
+        self.oc_camera.release()
         self.i_frame_h = self.na_frame.shape[0]
         self.i_frame_w = self.na_frame.shape[1]
         self.i_ncolor_channels = self.na_frame.shape[2]
@@ -54,6 +56,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
 
     def run(self):
         self.b_running = True
+        self.oc_camera = cv.VideoCapture(self.i_camera_idx)
         while self.b_running:
             if self.isInterruptionRequested():
                 self.b_running = False
@@ -125,9 +128,15 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 l_wins[i_cam_idx].ioctlRequest.connect(self.__cb_on_ioctl_requested, Qt.QueuedConnection)
+                self.l_cams[i_cam_idx].release()
 
     def run(self):
         self.b_running = True
+
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if b_do_cap:
+                self.l_cams[i_cam_idx] = cv.VideoCapture(i_cam_idx)
+
         while self.b_running:
             if self.isInterruptionRequested():
                 self.b_recording = False
