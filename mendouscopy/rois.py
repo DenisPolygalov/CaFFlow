@@ -330,7 +330,10 @@ class CMovieWiseROIPicker(object):
         if (self.na_fluo_bgr < 1.0).any():
             raise ValueError("Small background level detected. You probably doing something wrong.")
         for ii in range(len(self.l_ROI)):
-            self.na_fluo_dFF[...,ii] = (self.na_fluo_raw_mean[...,ii] - self.na_fluo_bgr) / self.na_fluo_bgr
+            na_dFF = (self.na_fluo_raw_mean[...,ii] - self.na_fluo_bgr) / self.na_fluo_bgr
+            if na_dFF.min() < 0:
+                na_dFF -= na_dFF.min()
+            self.na_fluo_dFF[...,ii] = na_dFF
         #
         self.d_FLUO['ROI_mask'] = self.na_mask_16U
         self.d_FLUO['ROI_data'] = self.l_ROI
@@ -537,7 +540,10 @@ class CMovieWiseWeightedROIPicker(object):
         if (self.na_fluo_bgr < 1.0).any():
             raise ValueError("Small background level detected. You probably doing something wrong.")
         for ii in range(len(self.d_wROI_hashes)):
-            self.na_fluo_dFF[...,ii] = (self.na_fluo_raw_mean[...,ii] - self.na_fluo_bgr) / self.na_fluo_bgr
+            na_dFF = (self.na_fluo_raw_mean[...,ii] - self.na_fluo_bgr) / self.na_fluo_bgr
+            if na_dFF.min() < 0:
+                na_dFF -= na_dFF.min()
+            self.na_fluo_dFF[...,ii] = na_dFF
         #
         self.d_FLUO['wROI_blend_raw']  = self.na_wROI_blend_raw
         self.d_FLUO['wROI_blend_norm'] = self.na_wROI_blend_norm
