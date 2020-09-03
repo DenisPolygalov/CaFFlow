@@ -91,10 +91,10 @@ class CMainWindow(QtWidgets.QWidget):
             self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
             self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
-        elif d_param['description'].find("C310") >= 0:
-            d_param['emulation_mode'] = True
-            self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+        #elif d_param['description'].find("C310") >= 0:
+            #d_param['emulation_mode'] = True
+            #self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
+            #self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
         elif d_param['description'].find("Tape Recorder") >= 0:
             self.win_preview = CSillyCameraPreviewWindow(d_param, b_enable_close_button=True)

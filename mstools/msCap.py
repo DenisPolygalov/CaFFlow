@@ -114,7 +114,7 @@ class CMainWindow(QtWidgets.QWidget):
         item3 = QtWidgets.QTableWidgetItem()
         item3.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
 
-        if s_vsrc_name.find("MINISCOPE") >= 0 or s_vsrc_name.find("C310") >= 0:
+        if s_vsrc_name.find("MINISCOPE") >= 0: # or s_vsrc_name.find("C310") >= 0:
             item1.setText("msCam")
             item3.setCheckState(QtCore.Qt.Checked)
         elif not self.b_behavCamFound:
@@ -205,9 +205,9 @@ class CMainWindow(QtWidgets.QWidget):
                 if d_param['description'].find("MINISCOPE") >= 0:
                     self.l_wins.append(CMiniScopePreviewWindow(d_param))
 
-                elif d_param['description'].find("C310") >= 0:
-                    d_param['emulation_mode'] = True
-                    self.l_wins.append(CMiniScopePreviewWindow(d_param))
+                #elif d_param['description'].find("C310") >= 0:
+                #    d_param['emulation_mode'] = True
+                #    self.l_wins.append(CMiniScopePreviewWindow(d_param))
 
                 elif d_param['description'].find("Tape Recorder") >= 0:
                     self.l_wins.append(CSillyCameraPreviewWindow(d_param))
