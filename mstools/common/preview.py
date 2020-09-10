@@ -317,6 +317,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         self.__frame_cap_thread = None
         self.__oc_canvas = None
         self.b_is_master = d_param['is_master']
+        self.b_is_multihead = d_param['is_multihead']
 
         # bottom status bar
         self.sbar = QtWidgets.QStatusBar(self)
@@ -338,6 +339,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         if self.__frame_cap_thread is not None:
             self.fatal_error("Preallocated camera object detected")
 
+        print("DEBUG: COpenCVPreviewWindow.start_preview(): cam_idx=%i, [%s]" % (i_camera_idx, oc_camera_info.description()))
         self.i_camera_idx = i_camera_idx
         self.oc_camera_info = oc_camera_info
         self.__frame_cap_thread = oc_frame_cap_thread
@@ -351,6 +353,12 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             raise ValueError("Unallocated camera object detected")
         return self.__frame_cap_thread.read_prop_sync(self.i_camera_idx, i_prop_id)
 
+    def disable_ui_controls(self):
+        pass
+
+    def enable_ui_controls(self):
+        pass
+
     def get_vstream_info(self):
         d_vstream_info = {}
         d_vstream_info['FPS'] = self.get_cap_prop(cv.CAP_PROP_FPS)
@@ -362,7 +370,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             d_vstream_info['IS_MASTER'] = 0
         return d_vstream_info
 
-    def update_cap_prop(self, i_prop_id, prop_new_val, b_async_call=False):
+    def update_cap_prop(self, i_prop_id, prop_new_val, b_async_call=True):
         if self.__frame_cap_thread is None:
             raise ValueError("Unallocated camera object detected")
 
@@ -374,6 +382,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
             d_ioctl_data['camera_idx'] = self.i_camera_idx
             d_ioctl_data['prop_id'] = i_prop_id
             d_ioctl_data['prop_new_val'] = prop_new_val
+            print("DEBUG: COpenCVPreviewWindow.update_cap_prop() -> emit()", d_ioctl_data)
             self.ioctlRequest.emit(d_ioctl_data)
         else:
             prop_old, prop_new = self.__frame_cap_thread.update_prop_sync(self.i_camera_idx, i_prop_id, prop_new_val)
@@ -383,6 +392,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         if self.__frame_cap_thread is None:
             return # this is correct logic, no error here
 
+        print("DEBUG: COpenCVPreviewWindow.stop_preview(): cam_idx=%i" % self.i_camera_idx)
         self.__frame_cap_thread.frameReady.disconnect(self.frameReady)
         self.__frame_cap_thread = None
         self.oc_camera_info = None
@@ -402,6 +412,7 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         if self.is_save_state_needed():
             self.save_state()
+        print("DEBUG: COpenCVPreviewWindow -> closeEvent: cam_idx=%i" % self.i_camera_idx)
         self.stop_preview()
         self.closeSignal.emit()
 
@@ -425,13 +436,13 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
         super(CSillyCameraPreviewWindow, self).__init__(d_param, *args, **kwargs)
         self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
 
+    def get_vstream_info(self):
+        d_vstream_info = super().get_vstream_info()
+        d_vstream_info['FPS'] = self.f_initial_frame_rate
+        return d_vstream_info
+
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
-        # Get/Set INITIAL camera properties such as FPS and/or frame size here
-        # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
-        f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
     #
 #
 
@@ -444,10 +455,10 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
 
         oc_cam = QCamera(oc_cam_info)
 
-        _camera_sync_load_and_start(oc_cam)
+        oc_cam.load()
         l_resolutions = oc_cam.supportedViewfinderResolutions()
         l_frate_ranges = oc_cam.supportedViewfinderFrameRateRanges()
-        _camera_sync_stop_and_unload(oc_cam)
+        oc_cam.unload()
 
         del oc_cam
 
@@ -483,14 +494,20 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         if self.b_startup_guard: return
         l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
         i_w, i_h = int(l_res[0]), int(l_res[1])
-        self.update_cap_prop(cv.CAP_PROP_FRAME_WIDTH,  i_w, b_async_call=True)
-        self.update_cap_prop(cv.CAP_PROP_FRAME_HEIGHT, i_h, b_async_call=True)
+        self.update_cap_prop(cv.CAP_PROP_FRAME_WIDTH,  i_w)
+        self.update_cap_prop(cv.CAP_PROP_FRAME_HEIGHT, i_h)
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
         if not self.is_started(): return
         if self.b_startup_guard: return
         f_cam_fps = float(self.cbox_frame_rate.cbox.itemText(i_idx))
-        self.update_cap_prop(cv.CAP_PROP_FPS, f_cam_fps, b_async_call=True)
+        self.update_cap_prop(cv.CAP_PROP_FPS, int(f_cam_fps))
+
+    def disable_ui_controls(self):
+        self.toolbar.setEnabled(False)
+
+    def enable_ui_controls(self):
+        self.toolbar.setEnabled(True)
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
@@ -501,7 +518,7 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         # by using self.get_cap_prop(cv.CAP_PROP_FPS) etc.
         f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
         if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
+            self.update_cap_prop(cv.CAP_PROP_FPS, int(self.f_initial_frame_rate), b_async_call=False)
 
         i_curr_frate = int(self.get_cap_prop(cv.CAP_PROP_FPS))
         for i_idx in range(self.cbox_frame_rate.cbox.count()):
@@ -514,6 +531,10 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         for i_idx in range(self.cbox_resolution.cbox.count()):
             if self.cbox_resolution.cbox.itemText(i_idx) == s_res_hash:
                 self.cbox_resolution.cbox.setCurrentIndex(i_idx)
+
+        # disable frame rate selection for multi-head setup
+        if self.b_is_multihead:
+            self.cbox_frame_rate.cbox.setEnabled(False)
 
         self.b_startup_guard = False
     #
@@ -622,6 +643,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         # reset frame rate (SATURATION)
         self.update_cap_prop(cv.CAP_PROP_SATURATION, self.t_frate_values[self.i_init_frate_idx])
 
+    def disable_ui_controls(self):
+        self.toolbar.setEnabled(False)
+
+    def enable_ui_controls(self):
+        self.toolbar.setEnabled(True)
+
     def get_vstream_info(self):
         d_vstream_info = super().get_vstream_info()
         d_vstream_info['FPS'] = self.t_frate_val_Hz[self.cbox_frame_rate.cbox.currentIndex()]
@@ -631,17 +658,14 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
         self.__reset_UI()
         self.__reset_HW()
-
-        # Seems like Miniscope need the initial FPS to be set too,
-        # in a way not consistent with it's further changes!
-        f_cam_fps = self.get_cap_prop(cv.CAP_PROP_FPS)
-        if abs(f_cam_fps - self.f_initial_frame_rate) > 0.5:
-            self.update_cap_prop(cv.CAP_PROP_FPS, self.f_initial_frame_rate)
+        # disable frame rate selection for multi-head setup
+        if self.b_is_multihead:
+            self.cbox_frame_rate.cbox.setEnabled(False)
 
     def stop_preview(self):
         # reset excitation LED power (HUE) to zero
         if self.is_started():
-            self.update_cap_prop(cv.CAP_PROP_HUE, 0)
+            self.update_cap_prop(cv.CAP_PROP_HUE, 0, b_async_call=False)
         super().stop_preview()
     #
 #

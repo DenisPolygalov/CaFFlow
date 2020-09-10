@@ -201,6 +201,13 @@ class CMainWindow(QtWidgets.QWidget):
                 d_param['is_master'] = l_is_master[i_idx]
                 d_param['initial_frame_rate'] = self.f_initial_frame_rate
 
+                # tell to any *PreviewWindow instance that more than one
+                # video source was enabled by user:
+                if sum(l_do_capture) > 1:
+                    d_param['is_multihead'] = True
+                else:
+                    d_param['is_multihead'] = False
+
                 # >>> window type selection depend on the present hardware <<<
                 if d_param['description'].find("MINISCOPE") >= 0:
                     self.l_wins.append(CMiniScopePreviewWindow(d_param))
@@ -241,20 +248,26 @@ class CMainWindow(QtWidgets.QWidget):
             if oc_win is None:
                 l_vstream_list.append(None) # *** WATCH OUT ***
                 continue
+            oc_win.disable_ui_controls()
             d_vstream_info = oc_win.get_vstream_info()
             # WARNING: here we modify the dictionary returned by the get_vstream_info()
             # method above by ADDING additional key/value pairs.
             d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
             l_FPS.append(d_vstream_info['FPS'])
             l_vstream_list.append(d_vstream_info)
+            print("DEBUG: cam_idx=%i [%s] (%s x %s) @ %s Hz" % ( \
+                i_idx, \
+                self.l_caminfos[i_idx].description(), \
+                repr(d_vstream_info['FRAME_WIDTH']), \
+                repr(d_vstream_info['FRAME_HEIGHT']), \
+                repr(d_vstream_info['FPS']) \
+            ))
             # TODO:
             # Warn user to change the frame rate values to all equal
             # or synchronize all cameras to the 'maser' one here if possible.
             # Do not allow runtime changes of the frame rate / frame size?
             # Add 'initial_frame_width' and 'initial_frame_height' handling in mstools.ini
             # Note that implementing on-the-fly frame SIZE change require storage container (na_frame) reallocation!
-            # Implement COpenCVmultiFrameCapThread.__cb_on_ioctl_requested() method
-            # Implement COpenCVframeCaptureThread.__cb_on_ioctl_requested() method
             # Also, it might be necessary to call CMuStreamVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
             # Implement graceful recovery from failed grab()/retrieve() calls.
@@ -265,9 +278,6 @@ class CMainWindow(QtWidgets.QWidget):
             # Implement storage of video source parameters such as excitation, gain etc.
             # upon clicking the "REC" button. Pass this information down to recorder sink.
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
-            # Setting excitation LED power (cv.CAP_PROP_HUE) to zero in stop_preview()
-            # does not work in msCap.py but does work in msView.py. Low level .get()
-            # method is being called in both cases. Hardware bug?
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
@@ -285,12 +295,12 @@ class CMainWindow(QtWidgets.QWidget):
         self.oc_frame_cap_thread.start_recording(d_rec_info)
 
     def __cb_on_btn_stop(self):
-        self.__interrupt_threads_gracefully()
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win is None: continue
             oc_win.close()
             del oc_win
             self.l_wins[i_idx] = None
+        self.__interrupt_threads_gracefully()
         self.l_wins.clear()
         self.btn_preview.setEnabled(True)
         self.oc_vsrc_table.setEnabled(True)

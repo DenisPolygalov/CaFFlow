@@ -9,10 +9,10 @@ import configparser
 from PyQt5 import QtWidgets
 from PyQt5.QtMultimedia import QCameraInfo
 
-from common.preview import CQCameraPreviewWindow
+# from common.preview import CQCameraPreviewWindow
 # from common.preview import COpenCVPreviewWindow
 from common.preview import CSillyCameraPreviewWindow
-# from common.preview import CSmartCameraPreviewWindow
+from common.preview import CSmartCameraPreviewWindow
 from common.preview import CMiniScopePreviewWindow
 from common.capture import COpenCVframeCaptureThread
 
@@ -75,9 +75,9 @@ class CMainWindow(QtWidgets.QWidget):
         self.cbox_cam_selector.setEnabled(False)
 
         if self.win_preview is not None:
-            self.win_preview.close()
-            del self.win_preview
-            self.win_preview = None
+            raise ValueError("Unallocated preview window object detected")
+        if self.oc_frame_cap_thread is not None:
+            raise ValueError("Unallocated frame capture thread object detected")
 
         i_idx = self.cbox_cam_selector.currentIndex()
         d_param = {}
@@ -85,6 +85,7 @@ class CMainWindow(QtWidgets.QWidget):
         d_param['emulation_mode'] = False
         d_param['is_master'] = True
         d_param['initial_frame_rate'] = self.f_initial_frame_rate
+        d_param['is_multihead'] = False
 
         # >>> window type selection depend on the present hardware <<<
         if d_param['description'].find("MINISCOPE") >= 0:
@@ -104,7 +105,7 @@ class CMainWindow(QtWidgets.QWidget):
             # There are multiple options available for various video sources:
 
             # 1. Preview window based on QCamera class from PyQt5
-            self.win_preview = CQCameraPreviewWindow()
+            # self.win_preview = CQCameraPreviewWindow()
             # WARNING: do not create self.oc_frame_cap_thread object
             # for the CQCameraPreviewWindow() type of window!
             # Check self.oc_frame_cap_thread == None all the way below!
@@ -119,8 +120,8 @@ class CMainWindow(QtWidgets.QWidget):
             # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
 
             # 4. Same as above but provide QCameraInfo and able to change frame rate/resolution
-            # self.win_preview = CSmartCameraPreviewWindow(d_param, self.l_cameras[i_idx], b_enable_close_button=True)
-            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            self.win_preview = CSmartCameraPreviewWindow(d_param, self.l_cameras[i_idx], b_enable_close_button=True)
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
         # ------------------------------------------------------------
 
         self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)
@@ -130,17 +131,21 @@ class CMainWindow(QtWidgets.QWidget):
             self.oc_frame_cap_thread.start()
 
     def __cb_on_preview_closed(self):
+        self.win_preview.closeSignal.disconnect(self.__cb_on_preview_closed)
+        self.win_preview.close()
+        del self.win_preview
+        self.win_preview = None
         self.__interrupt_threads_gracefully()
+        del self.oc_frame_cap_thread
+        self.oc_frame_cap_thread = None
         self.btn_preview.setEnabled(True)
         self.cbox_cam_selector.setEnabled(True)
-    #
 
     def __interrupt_threads_gracefully(self):
         if self.oc_frame_cap_thread is not None:
             self.oc_frame_cap_thread.requestInterruption()
             self.oc_frame_cap_thread.wait(10000)
-            del self.oc_frame_cap_thread
-            self.oc_frame_cap_thread = None
+            self.oc_frame_cap_thread.quit()
 
     def fatal_error(self, s_msg):
         self.__interrupt_threads_gracefully()
@@ -148,6 +153,7 @@ class CMainWindow(QtWidgets.QWidget):
         sys.exit(-1)
 
     def closeEvent(self, event):
+        print("DEBUG: msView:CMainWindow -> closeEvent")
         self.__interrupt_threads_gracefully()
         if self.win_preview is not None:
             self.win_preview.close()
