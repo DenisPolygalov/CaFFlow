@@ -3,6 +3,7 @@
 
 import os
 import sys
+import json
 import configparser
 
 # import PyQt5 # hint for pyinstaller
@@ -253,31 +254,34 @@ class CMainWindow(QtWidgets.QWidget):
             # WARNING: here we modify the dictionary returned by the get_vstream_info()
             # method above by ADDING additional key/value pairs.
             d_vstream_info['OUTPUT_FILE_PREFIX'] = self.oc_vsrc_table.item(i_idx, 1).text()
+            d_vstream_info['DESCRIPTION'] = self.l_caminfos[i_idx].description()
             l_FPS.append(d_vstream_info['FPS'])
             l_vstream_list.append(d_vstream_info)
             print("DEBUG: cam_idx=%i [%s] (%s x %s) @ %s Hz" % ( \
                 i_idx, \
-                self.l_caminfos[i_idx].description(), \
+                repr(d_vstream_info['DESCRIPTION']), \
                 repr(d_vstream_info['FRAME_WIDTH']), \
                 repr(d_vstream_info['FRAME_HEIGHT']), \
                 repr(d_vstream_info['FPS']) \
             ))
             # TODO:
-            # Warn user to change the frame rate values to all equal
-            # or synchronize all cameras to the 'maser' one here if possible.
-            # Do not allow runtime changes of the frame rate / frame size?
             # Add 'initial_frame_width' and 'initial_frame_height' handling in mstools.ini
-            # Note that implementing on-the-fly frame SIZE change require storage container (na_frame) reallocation!
+            # These values has to be tailored to specific video source type because for
+            # example Miniscope does not support frame size changing.
+            # Note that implementing on-the-fly frame SIZE change require
+            # storage container (na_frame) reallocation!
             # Also, it might be necessary to call CMuStreamVideoWriter.write_next_frame()
             # in a separated thread with FIFO frame data/timestamps buffer(s) in between.
-            # Implement graceful recovery from failed grab()/retrieve() calls.
             # Estimate amount of dropped frames and implement correspondent counters.
+            # Maybe add some sort of 'bad frame' flag into timestamps.dat?
             # Switching from 'Recording' state to 'Preview' state is not supported.
             # maybe add this later. Use start_new_session() method?
             # Implement 'settings_and_notes.dat' file generation. Run-time notes/events?
-            # Implement storage of video source parameters such as excitation, gain etc.
-            # upon clicking the "REC" button. Pass this information down to recorder sink.
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
+            # Fix RGB order issue for *PreviewWindow objects:
+            # weird color order on preview, but recorded video files seems to be OK.
+            # 'Recording time' visualization, such as 00:00:00. Which window? Miniscope only?
+            # Miniscope preview window: plot color histogram of each (gray-scale) frame as overlay.
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
             QtWidgets.QMessageBox.warning(None, "Sanity check failed", \
@@ -291,8 +295,13 @@ class CMainWindow(QtWidgets.QWidget):
         d_rec_info = {}
         d_rec_info['DATA_ROOT_DIR'] = self.s_data_root_dir
         d_rec_info['VSTREAM_LIST'] = l_vstream_list
+
         self.oc_frame_writer.start_recording(d_rec_info)
         self.oc_frame_cap_thread.start_recording(d_rec_info)
+
+        d_rec_info['RSES_DIR'] = self.oc_frame_writer.get_current_rses_dir()
+        with open(os.path.join(d_rec_info['RSES_DIR'], 'rec_info.json'), 'w') as h_fout:
+            json.dump(d_rec_info, h_fout, indent=3)
 
     def __cb_on_btn_stop(self):
         for i_idx, oc_win in enumerate(self.l_wins):

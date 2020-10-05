@@ -362,8 +362,8 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
     def get_vstream_info(self):
         d_vstream_info = {}
         d_vstream_info['FPS'] = self.get_cap_prop(cv.CAP_PROP_FPS)
-        d_vstream_info['FRAME_WIDTH'] = self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH)
-        d_vstream_info['FRAME_HEIGHT'] = self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT)
+        d_vstream_info['FRAME_WIDTH'] = int(self.get_cap_prop(cv.CAP_PROP_FRAME_WIDTH))
+        d_vstream_info['FRAME_HEIGHT'] = int(self.get_cap_prop(cv.CAP_PROP_FRAME_HEIGHT))
         if self.b_is_master:
             d_vstream_info['IS_MASTER'] = 1
         else:
@@ -465,6 +465,17 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         if len(l_frate_ranges) == 0 or len(l_resolutions) == 0:
             raise RuntimeError("The camera (%s) does not support frame rate/resolution information retrieval" % s_cam_descr)
 
+        b_requested_frate_found = False
+        for oc_frate in l_frate_ranges:
+            if abs(oc_frate.minimumFrameRate - self.f_initial_frame_rate) <= 0.5:
+                b_requested_frate_found = True
+
+        if not b_requested_frate_found:
+            raise RuntimeError( \
+                "The camera [%s] does not support frame rate value [%i Hz] requested in the ini file" % \
+                (s_cam_descr, self.f_initial_frame_rate) \
+            )
+
         self.b_startup_guard = False
         self.toolbar = QtWidgets.QToolBar("Preview")
 
@@ -532,8 +543,9 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
             if self.cbox_resolution.cbox.itemText(i_idx) == s_res_hash:
                 self.cbox_resolution.cbox.setCurrentIndex(i_idx)
 
-        # disable frame rate selection for multi-head setup
+        # disable frame resolution and frame rate selection for multi-head setup
         if self.b_is_multihead:
+            self.cbox_resolution.cbox.setEnabled(False)
             self.cbox_frame_rate.cbox.setEnabled(False)
 
         self.b_startup_guard = False
@@ -652,6 +664,9 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
     def get_vstream_info(self):
         d_vstream_info = super().get_vstream_info()
         d_vstream_info['FPS'] = self.t_frate_val_Hz[self.cbox_frame_rate.cbox.currentIndex()]
+        d_vstream_info['EXPOSURE'] = self.sld_exposure.slider.value()
+        d_vstream_info['GAIN'] = self.sld_gain.slider.value()
+        d_vstream_info['EXCITATION'] = self.sld_excitation.slider.value()
         return d_vstream_info
 
     def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):

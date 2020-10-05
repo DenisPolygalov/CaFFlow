@@ -115,7 +115,9 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.oc_sink_list = oc_sink_list
         self.l_ts = []
         self.i_grab_fail_cnt = 0
-        self.i_retrieve_fail_cnt = 0
+        self.i_retr_fail_cnt = 0
+        self.l_grab_status = []
+        self.l_retr_status = []
         self.MAX_FRAME_DROPS = 100
         self.FRAME_READ_DELAY_uS = 100000
 
@@ -139,11 +141,15 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                 self.l_frames.append(na_frame.copy())
                 self.l_frame_hwc.append((na_frame.shape[0], na_frame.shape[1], na_frame.shape[2]))
                 self.l_ts.append(0.0)
+                self.l_grab_status.append(b_status)
+                self.l_retr_status.append(b_status)
 
             else:
                 self.l_frames.append(None) # *** WATCH OUT ***
                 self.l_frame_hwc.append((None, None, None)) # *** WATCH OUT ***
                 self.l_ts.append(None) # *** WATCH OUT ***
+                self.l_grab_status.append(None) # *** WATCH OUT ***
+                self.l_retr_status.append(None) # *** WATCH OUT ***
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
@@ -161,28 +167,41 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             # grab new frame from each capture-enabled camera
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
                 if b_do_cap:
-                    b_status = self.l_cams[i_cam_idx].grab()
-                    if not b_status:
-                        self.i_grab_fail_cnt += 1
-                        print("DEBUG: frame grab() failed: %i time(s)" % self.i_grab_fail_cnt)
-                        self.usleep(self.FRAME_READ_DELAY_uS)
-                        if self.i_grab_fail_cnt >= self.MAX_FRAME_DROPS:
-                            raise RuntimeError("Unable to grab next frame from camera number %i" % i_cam_idx)
-                        continue
+                    self.l_grab_status[i_cam_idx] = self.l_cams[i_cam_idx].grab()
 
             # retrieve and decode frame from each capture-enabled camera
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
                 if b_do_cap:
-                    b_status, tmp_image = self.l_cams[i_cam_idx].retrieve()
-                    self.l_ts[i_cam_idx] = time.perf_counter()
-                    if not b_status:
-                        self.i_retrieve_fail_cnt += 1
-                        print("DEBUG: frame retrieve() failed: %i time(s)" % self.i_retrieve_fail_cnt)
-                        self.usleep(self.FRAME_READ_DELAY_uS)
-                        if self.i_retrieve_fail_cnt >= self.MAX_FRAME_DROPS:
-                            raise RuntimeError("Unable to retrieve next frame from camera number %i" % i_cam_idx)
-                        continue
-                    self.l_frames[i_cam_idx][...] = tmp_image[...]
+                    self.l_retr_status[i_cam_idx], tmp_image = self.l_cams[i_cam_idx].retrieve()
+                    if self.l_retr_status[i_cam_idx]:
+                        self.l_ts[i_cam_idx] = time.perf_counter()
+                        self.l_frames[i_cam_idx][...] = tmp_image[...]
+
+            # check for grab() and/or retrieve() failures
+            b_do_sleep = False
+            for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+                if b_do_cap:
+                    if not self.l_grab_status[i_cam_idx]:
+                        self.i_grab_fail_cnt += 1
+                        print("DEBUG: frame grab() failed: %i time(s) for camera number %i" % (self.i_grab_fail_cnt, i_cam_idx))
+                        b_do_sleep = True
+                    if not self.l_retr_status[i_cam_idx]:
+                        self.i_retr_fail_cnt += 1
+                        print("DEBUG: frame retrieve() failed: %i time(s) for camera number %i" % (self.i_retr_fail_cnt, i_cam_idx))
+                        b_do_sleep = True
+
+            if b_do_sleep:
+                print("DEBUG: sleeping for %i usec zzZ..." % self.FRAME_READ_DELAY_uS)
+                self.usleep(self.FRAME_READ_DELAY_uS)
+                if self.i_grab_fail_cnt >= self.MAX_FRAME_DROPS or \
+                   self.i_retr_fail_cnt >= self.MAX_FRAME_DROPS:
+                    raise RuntimeError("Unable to get next frame from camera number %i" % i_cam_idx)
+                continue
+
+            if self.i_grab_fail_cnt > 0 or self.i_retr_fail_cnt > 0 and not b_do_sleep:
+                print("DEBUG: frame capture recovered. Reset grab/retrieve counters!")
+                self.i_grab_fail_cnt = 0
+                self.i_retr_fail_cnt = 0
 
             # push acquired frames into a sink(s) (not necessary files)
             for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):

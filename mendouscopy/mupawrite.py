@@ -97,6 +97,9 @@ class CMuPaVideoWriter(object):
         if self.oc_video_writer is not None:
             self.oc_video_writer.release()
 
+    def get_current_rses_dir(self):
+        return self.s_out_rses_dir
+
     def write_next_frame(self, na_in):
         if na_in.ndim != 3 or na_in.shape[2] != 3:
             raise ValueError("Unexpected frame shape: %s" % repr(na_in.shape))
@@ -198,6 +201,12 @@ class CMuStreamVideoWriter(object):
 
     def write_time_stamp(self, i_sink_id, f_ts):
         self.l_video_writers[i_sink_id].write_time_stamp(i_sink_id, f_ts)
+
+    def get_current_rses_dir(self):
+        for i_idx, oc_writer in enumerate(self.l_video_writers):
+            if oc_writer is not None:
+                return oc_writer.get_current_rses_dir()
+        return None
 
     def close(self):
         for i_idx, b_do_cap in enumerate(self.t_do_capture):
