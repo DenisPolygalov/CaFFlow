@@ -4,6 +4,7 @@
 import os
 import sys
 import json
+import datetime
 import configparser
 
 # import PyQt5 # hint for pyinstaller
@@ -64,6 +65,15 @@ class CMainWindow(QtWidgets.QWidget):
         if len(self.l_caminfos) == 0:
             self.fatal_error("No cameras found!")
 
+        self.rec_timer_lcd = QtWidgets.QLCDNumber()
+        self.rec_timer_lcd.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
+        self.rec_timer_lcd.setMinimumHeight(52)
+        self.rec_timer_lcd.setMinimumWidth(90)
+        self.rec_timer_lcd.display('00:00')
+        self.rec_timer = QtCore.QTimer()
+        self.rec_timer.timeout.connect(self.__cb_on_rec_timer_timeout)
+        self.rec_time_start = None
+
         self.oc_vsrc_table = QtWidgets.QTableWidget()
         self.oc_vsrc_table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
         self.oc_vsrc_table.horizontalHeader().setDefaultSectionSize(90)
@@ -92,13 +102,15 @@ class CMainWindow(QtWidgets.QWidget):
         self.btn_stop.setEnabled(False)
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(self.oc_vsrc_table, 0, 0, 1, 3)
-        layout.addWidget(self.btn_preview, 1, 0, 1, 1)
-        layout.addWidget(self.btn_record, 1, 1, 1, 1)
-        layout.addWidget(self.btn_stop, 1, 2, 1, 1)
+        layout.addWidget(self.rec_timer_lcd, 0, 0, 1, 1)
+        layout.addWidget(self.oc_vsrc_table, 1, 0, 1, 3)
+        layout.addWidget(self.btn_preview, 2, 0, 1, 1)
+        layout.addWidget(self.btn_record, 2, 1, 1, 1)
+        layout.addWidget(self.btn_stop, 2, 2, 1, 1)
 
         self.setLayout(layout)
         self.setMinimumWidth(500)
+        self.setMinimumHeight(250)
         self.setWindowTitle("Video Source Manager")
 
     def __add_new_row_to_vsrc_table(self, s_vsrc_name):
@@ -141,6 +153,11 @@ class CMainWindow(QtWidgets.QWidget):
         for _, ch in enumerate(str(i_idx)):
             l_out.append(chr(int(ch)+64))
         return "".join(l_out)
+
+    def __cb_on_rec_timer_timeout(self):
+        tm = datetime.datetime.now() - self.rec_time_start
+        dt_min, dt_sec = divmod(tm.total_seconds(), 60)
+        self.rec_timer_lcd.display('%02d:%02d' % (int(dt_min), int(dt_sec)))
 
     def __cb_on_btn_preview(self):
         i_ncols = self.oc_vsrc_table.columnCount()
@@ -303,7 +320,12 @@ class CMainWindow(QtWidgets.QWidget):
         with open(os.path.join(d_rec_info['RSES_DIR'], 'rec_info.json'), 'w') as h_fout:
             json.dump(d_rec_info, h_fout, indent=3)
 
+        self.rec_time_start = datetime.datetime.now()
+        self.rec_timer.start(1000)
+
     def __cb_on_btn_stop(self):
+        self.rec_timer.stop()
+        self.rec_timer_lcd.display('00:00')
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win is None: continue
             oc_win.close()
