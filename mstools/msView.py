@@ -44,6 +44,8 @@ class CMainWindow(QtWidgets.QWidget):
 
         self.oc_global_cfg = oc_global_cfg
         self.f_initial_frame_rate = float(self.oc_global_cfg['general']['initial_frame_rate'])
+        self.i_initial_frame_width = int(self.oc_global_cfg['general']['initial_frame_width'])
+        self.i_initial_frame_height = int(self.oc_global_cfg['general']['initial_frame_height'])
 
         self.oc_frame_cap_thread = None
         self.win_preview = None
@@ -81,25 +83,29 @@ class CMainWindow(QtWidgets.QWidget):
 
         i_idx = self.cbox_cam_selector.currentIndex()
         d_param = {}
+        d_param['camera_index'] = i_idx
         d_param['description'] = self.l_cameras[i_idx].description()
         d_param['emulation_mode'] = False
         d_param['is_master'] = True
         d_param['initial_frame_rate'] = self.f_initial_frame_rate
+        d_param['initial_frame_width'] = self.i_initial_frame_width
+        d_param['initial_frame_height'] = self.i_initial_frame_height
         d_param['is_multihead'] = False
+        d_param['is_smart'] = False
 
         # >>> window type selection depend on the present hardware <<<
         if d_param['description'].find("MINISCOPE") >= 0:
             self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
 
         #elif d_param['description'].find("C310") >= 0:
             #d_param['emulation_mode'] = True
             #self.win_preview = CMiniScopePreviewWindow(d_param, b_enable_close_button=True)
-            #self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            #self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
 
         elif d_param['description'].find("Tape Recorder") >= 0:
             self.win_preview = CSillyCameraPreviewWindow(d_param, b_enable_close_button=True)
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
 
         else:
             # There are multiple options available for various video sources:
@@ -113,20 +119,21 @@ class CMainWindow(QtWidgets.QWidget):
 
             # 2. Generic OpenCV based preview window
             # self.win_preview = COpenCVPreviewWindow(d_param, b_enable_close_button=True)
-            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
 
             # 3. For type of cameras that does not support parameter retrieval
             # self.win_preview = CSillyCameraPreviewWindow(d_param, b_enable_close_button=True)
-            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            # self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
 
             # 4. Same as above but provide QCameraInfo and able to change frame rate/resolution
+            d_param['is_smart'] = True
             self.win_preview = CSmartCameraPreviewWindow(d_param, self.l_cameras[i_idx], b_enable_close_button=True)
-            self.oc_frame_cap_thread = COpenCVframeCaptureThread(i_idx, self.win_preview)
+            self.oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, self.win_preview)
         # ------------------------------------------------------------
 
         self.win_preview.closeSignal.connect(self.__cb_on_preview_closed)
         self.win_preview.show()
-        self.win_preview.start_preview(i_idx, self.l_cameras[i_idx], self.oc_frame_cap_thread)
+        self.win_preview.start_preview(self.l_cameras[i_idx], self.oc_frame_cap_thread)
         if self.oc_frame_cap_thread is not None:
             self.oc_frame_cap_thread.start()
 

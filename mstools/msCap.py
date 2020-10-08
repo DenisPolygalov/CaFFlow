@@ -48,9 +48,12 @@ class CMainWindow(QtWidgets.QWidget):
         self.s_data_root_dir = self.oc_global_cfg['general']['data_root_dir']
         self.s_data_root_dir = self.s_data_root_dir.strip()
         self.f_initial_frame_rate = float(self.oc_global_cfg['general']['initial_frame_rate'])
+        self.i_initial_frame_width = int(self.oc_global_cfg['general']['initial_frame_width'])
+        self.i_initial_frame_height = int(self.oc_global_cfg['general']['initial_frame_height'])
 
         self.oc_frame_cap_thread = None
         self.l_wins = []
+        self.l_cap_params = []
         self.b_behavCamFound = False
 
         if not os.path.isdir(self.s_data_root_dir):
@@ -214,10 +217,14 @@ class CMainWindow(QtWidgets.QWidget):
         for i_idx, oc_cam_info in enumerate(self.l_caminfos):
             if l_do_capture[i_idx]:
                 d_param = {}
+                d_param['camera_index'] = i_idx
                 d_param['description'] = oc_cam_info.description()
                 d_param['emulation_mode'] = False
                 d_param['is_master'] = l_is_master[i_idx]
                 d_param['initial_frame_rate'] = self.f_initial_frame_rate
+                d_param['initial_frame_width'] = self.i_initial_frame_width
+                d_param['initial_frame_height'] = self.i_initial_frame_height
+                d_param['is_smart'] = False
 
                 # tell to any *PreviewWindow instance that more than one
                 # video source was enabled by user:
@@ -238,17 +245,21 @@ class CMainWindow(QtWidgets.QWidget):
                     self.l_wins.append(CSillyCameraPreviewWindow(d_param))
 
                 else:
+                    d_param['is_smart'] = True
                     self.l_wins.append(CSmartCameraPreviewWindow(d_param, oc_cam_info))
+
+                self.l_cap_params.append(d_param.copy())
                 # ------------------------------------------------------------
             else:
                 self.l_wins.append(None)
+                self.l_cap_params.append(None)
 
         self.oc_frame_writer = CMuStreamVideoWriter(l_do_capture)
-        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins, self.oc_frame_writer)
+        self.oc_frame_cap_thread = COpenCVmultiFrameCapThread(l_do_capture, self.l_wins, self.l_cap_params, self.oc_frame_writer)
         for i_idx, oc_win in enumerate(self.l_wins):
             if oc_win is None: continue
             oc_win.show()
-            oc_win.start_preview(i_idx, self.l_caminfos[i_idx], self.oc_frame_cap_thread)
+            oc_win.start_preview(self.l_caminfos[i_idx], self.oc_frame_cap_thread)
 
         self.oc_frame_cap_thread.start()
         self.btn_record.setEnabled(True)
@@ -282,9 +293,10 @@ class CMainWindow(QtWidgets.QWidget):
                 repr(d_vstream_info['FPS']) \
             ))
             # TODO:
-            # Add 'initial_frame_width' and 'initial_frame_height' handling in mstools.ini
-            # These values has to be tailored to specific video source type because for
+            # The 'initial_frame_width' and 'initial_frame_height' paramers in mstools.ini
+            # has to be tailored to specific video source type because for
             # example Miniscope does not support frame size changing.
+            # Currently these values has to be the same for all 'smart' video sources.
             # Note that implementing on-the-fly frame SIZE change require
             # storage container (na_frame) reallocation!
             # Also, it might be necessary to call CMuStreamVideoWriter.write_next_frame()
@@ -297,7 +309,6 @@ class CMainWindow(QtWidgets.QWidget):
             # TTL I/O, Ext. triggering (BNC connectors on Miniscope's acquisition box).
             # Fix RGB order issue for *PreviewWindow objects:
             # weird color order on preview, but recorded video files seems to be OK.
-            # 'Recording time' visualization, such as 00:00:00. Which window? Miniscope only?
             # Miniscope preview window: plot color histogram of each (gray-scale) frame as overlay.
 
         if abs(l_FPS[0] - sum(l_FPS) / len(l_FPS)) > 0.1:
@@ -333,6 +344,7 @@ class CMainWindow(QtWidgets.QWidget):
             self.l_wins[i_idx] = None
         self.__interrupt_threads_gracefully()
         self.l_wins.clear()
+        self.l_cap_params.clear()
         self.btn_preview.setEnabled(True)
         self.oc_vsrc_table.setEnabled(True)
         self.btn_record.setEnabled(False)
@@ -359,6 +371,7 @@ class CMainWindow(QtWidgets.QWidget):
             del oc_win
             self.l_wins[i_idx] = None
         self.l_wins.clear()
+        self.l_cap_params.clear()
     #
 #
 

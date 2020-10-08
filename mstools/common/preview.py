@@ -129,7 +129,6 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         self._MIN_WIN_WIDTH = 640
         self.oc_camera_info = None
         self.oc_camera = None
-        self.i_camera_idx = -1
         self.b_guard = False
         self.toolbar = QtWidgets.QToolBar("Preview")
 
@@ -229,11 +228,10 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
-    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+    def start_preview(self, oc_camera_info, oc_frame_cap_thread):
         if self.oc_camera is not None:
             self.fatal_error("Preallocated camera object detected")
 
-        self.i_camera_idx = i_camera_idx
         self.oc_camera_info = oc_camera_info
         self.oc_camera = QCamera(self.oc_camera_info)
 
@@ -312,10 +310,10 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         super(COpenCVPreviewWindow, self).__init__(*args, **kwargs)
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, b_enable_close_button)
 
-        self.i_camera_idx = -1
         self.oc_camera_info = None
         self.__frame_cap_thread = None
         self.__oc_canvas = None
+        self.i_camera_idx = d_param['camera_index']
         self.b_is_master = d_param['is_master']
         self.b_is_multihead = d_param['is_multihead']
 
@@ -335,12 +333,11 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.critical(None, "Fatal Error", "%s\nThe application will exit now." % s_msg)
         sys.exit(-1)
 
-    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
+    def start_preview(self, oc_camera_info, oc_frame_cap_thread):
         if self.__frame_cap_thread is not None:
             self.fatal_error("Preallocated camera object detected")
 
-        print("DEBUG: COpenCVPreviewWindow.start_preview(): cam_idx=%i, [%s]" % (i_camera_idx, oc_camera_info.description()))
-        self.i_camera_idx = i_camera_idx
+        print("DEBUG: COpenCVPreviewWindow.start_preview(): cam_idx=%i, [%s]" % (self.i_camera_idx, oc_camera_info.description()))
         self.oc_camera_info = oc_camera_info
         self.__frame_cap_thread = oc_frame_cap_thread
         self.__frame_cap_thread.frameReady.connect(self.frameReady, Qt.QueuedConnection)
@@ -441,8 +438,8 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
         d_vstream_info['FPS'] = self.f_initial_frame_rate
         return d_vstream_info
 
-    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
-        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+    def start_preview(self, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(oc_camera_info, oc_frame_cap_thread)
     #
 #
 
@@ -450,8 +447,15 @@ class CSillyCameraPreviewWindow(COpenCVPreviewWindow):
 class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
     def __init__(self, d_param, oc_cam_info, *args, **kwargs):
         super(CSmartCameraPreviewWindow, self).__init__(d_param, *args, **kwargs)
+        self.i_initial_cbox_resolution_idx = -1
         self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
+        self.i_initial_frame_width = d_param['initial_frame_width']
+        self.i_initial_frame_height = d_param['initial_frame_height']
+        self.s_initial_frame_wh = "%i x %i" % (self.i_initial_frame_width, self.i_initial_frame_height)
         s_cam_descr = oc_cam_info.description()
+        print("DEBUG: CSmartCameraPreviewWindow(): [%s @ %.1f Hz] %s" % \
+             (self.s_initial_frame_wh, self.f_initial_frame_rate, s_cam_descr) \
+        )
 
         oc_cam = QCamera(oc_cam_info)
 
@@ -464,6 +468,18 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
 
         if len(l_frate_ranges) == 0 or len(l_resolutions) == 0:
             raise RuntimeError("The camera (%s) does not support frame rate/resolution information retrieval" % s_cam_descr)
+
+        b_requested_fsize_found = False
+        for oc_res in l_resolutions:
+            if self.s_initial_frame_wh == "%i x %i" % (oc_res.width(), oc_res.height()):
+                b_requested_fsize_found = True
+                break
+
+        if not b_requested_fsize_found:
+            raise RuntimeError( \
+                "The camera [%s] does not support frame size value [%s] requested in the ini file" % \
+                (s_cam_descr, self.s_initial_frame_wh) \
+            )
 
         b_requested_frate_found = False
         for oc_frate in l_frate_ranges:
@@ -503,10 +519,18 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
     def __cb_on_resolution_cbox_index_changed(self, i_idx):
         if not self.is_started(): return
         if self.b_startup_guard: return
-        l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
-        i_w, i_h = int(l_res[0]), int(l_res[1])
-        self.update_cap_prop(cv.CAP_PROP_FRAME_WIDTH,  i_w)
-        self.update_cap_prop(cv.CAP_PROP_FRAME_HEIGHT, i_h)
+        # l_res = self.cbox_resolution.cbox.itemText(i_idx).split(" x ")
+        # i_w, i_h = int(l_res[0]), int(l_res[1])
+        # self.update_cap_prop(cv.CAP_PROP_FRAME_WIDTH,  i_w)
+        # self.update_cap_prop(cv.CAP_PROP_FRAME_HEIGHT, i_h)
+        if i_idx != self.i_initial_cbox_resolution_idx:
+            self.cbox_resolution.cbox.setCurrentIndex(self.i_initial_cbox_resolution_idx)
+            return
+        l_msg = []
+        l_msg.append("Changing resolution 'on-the-fly' is not implemented.")
+        l_msg.append("You can define initial frame width and height values in the")
+        l_msg.append("mstools.ini file in order to change frame size at startup.")
+        QtWidgets.QMessageBox.warning(None, "Warning", '\n'.join(l_msg))
 
     def __cb_on_frame_rate_cbox_index_changed(self, i_idx):
         if not self.is_started(): return
@@ -520,8 +544,8 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
     def enable_ui_controls(self):
         self.toolbar.setEnabled(True)
 
-    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
-        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+    def start_preview(self, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(oc_camera_info, oc_frame_cap_thread)
 
         self.b_startup_guard = True
 
@@ -542,6 +566,7 @@ class CSmartCameraPreviewWindow(COpenCVPreviewWindow):
         for i_idx in range(self.cbox_resolution.cbox.count()):
             if self.cbox_resolution.cbox.itemText(i_idx) == s_res_hash:
                 self.cbox_resolution.cbox.setCurrentIndex(i_idx)
+                self.i_initial_cbox_resolution_idx = i_idx
 
         # disable frame resolution and frame rate selection for multi-head setup
         if self.b_is_multihead:
@@ -669,8 +694,8 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         d_vstream_info['EXCITATION'] = self.sld_excitation.slider.value()
         return d_vstream_info
 
-    def start_preview(self, i_camera_idx, oc_camera_info, oc_frame_cap_thread):
-        super().start_preview(i_camera_idx, oc_camera_info, oc_frame_cap_thread)
+    def start_preview(self, oc_camera_info, oc_frame_cap_thread):
+        super().start_preview(oc_camera_info, oc_frame_cap_thread)
         self.__reset_UI()
         self.__reset_HW()
         # disable frame rate selection for multi-head setup

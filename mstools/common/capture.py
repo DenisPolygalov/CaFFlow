@@ -34,9 +34,9 @@ http://www.fsf.org/
 class COpenCVframeCaptureThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(np.ndarray)
 
-    def __init__(self, i_camera_idx, h_win, *args, **kwargs):
+    def __init__(self, d_param, h_win, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
-        self.i_camera_idx = i_camera_idx
+        self.i_camera_idx = d_param['camera_index']
         self.b_running = False
         self.oc_camera = cv.VideoCapture(self.i_camera_idx + cv.CAP_DSHOW)
         self.i_frame_id = -1 # so valid frame numbers will start from zero
@@ -44,6 +44,16 @@ class COpenCVframeCaptureThread(QtCore.QThread):
         self.MAX_FRAME_DROPS = 100
         self.FRAME_READ_DELAY_uS = 100000
         print("DEBUG: COpenCVframeCaptureThread(): cam_idx=%i" % self.i_camera_idx)
+
+        i_frame_w = int(self.oc_camera.get(cv.CAP_PROP_FRAME_WIDTH))
+        i_frame_h = int(self.oc_camera.get(cv.CAP_PROP_FRAME_HEIGHT))
+        print("DEBUG: COpenCVframeCaptureThread(): current frame size: %i x %i" % (i_frame_w, i_frame_h))
+
+        if d_param['is_smart']:
+            if d_param['initial_frame_width']  != i_frame_w or d_param['initial_frame_height'] != i_frame_h:
+                print("DEBUG: COpenCVframeCaptureThread(): frame size mismatch! Trying to switch...")
+                self.oc_camera.set(cv.CAP_PROP_FRAME_WIDTH, d_param['initial_frame_width'])
+                self.oc_camera.set(cv.CAP_PROP_FRAME_HEIGHT, d_param['initial_frame_height'])
 
         b_status, self.na_frame = self.oc_camera.read()
         if not b_status:
@@ -103,7 +113,7 @@ class COpenCVframeCaptureThread(QtCore.QThread):
 class COpenCVmultiFrameCapThread(QtCore.QThread):
     frameReady = QtCore.pyqtSignal(str)
 
-    def __init__(self, l_do_capture, l_wins, oc_sink_list, *args, **kwargs):
+    def __init__(self, l_do_capture, l_wins, l_cap_params, oc_sink_list, *args, **kwargs):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.t_do_capture = tuple(l_do_capture) # freeze it to prevent changes from outside
         self.b_running = False
@@ -128,6 +138,22 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             else:
                 print("DEBUG: COpenCVmultiFrameCapThread(): cam_idx=%i [SKIP]" % i_cam_idx)
                 self.l_cams.append(None) # *** WATCH OUT ***
+
+        for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
+            if not b_do_cap: continue
+            d_param = l_cap_params[i_cam_idx]
+            if not d_param['is_smart']: continue
+            print("DEBUG: COpenCVmultiFrameCapThread(): cam_idx=%i declared to be smart" % i_cam_idx)
+
+            i_frame_w = int(self.l_cams[i_cam_idx].get(cv.CAP_PROP_FRAME_WIDTH))
+            i_frame_h = int(self.l_cams[i_cam_idx].get(cv.CAP_PROP_FRAME_HEIGHT))
+            print("DEBUG: COpenCVmultiFrameCapThread(): cam_idx=%i current frame size: %i x %i" % (i_cam_idx, i_frame_w, i_frame_h))
+
+            if d_param['initial_frame_width']  != i_frame_w or d_param['initial_frame_height'] != i_frame_h:
+                print("DEBUG: COpenCVframeCaptureThread(): frame size mismatch! Trying to switch...")
+                self.l_cams[i_cam_idx].set(cv.CAP_PROP_FRAME_WIDTH, d_param['initial_frame_width'])
+                self.l_cams[i_cam_idx].set(cv.CAP_PROP_FRAME_HEIGHT, d_param['initial_frame_height'])
+                time.sleep(2)
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
