@@ -13,6 +13,7 @@ from PyQt5.QtMultimedia import QCamera
 from PyQt5.QtMultimediaWidgets import QCameraViewfinder
 
 import cv2 as cv
+import numpy as np
 
 from .widgets import CLabeledComboBox
 from .widgets import CLabeledSpinSlider
@@ -279,23 +280,56 @@ class CQCameraPreviewWindow(QtWidgets.QMainWindow):
 class CNdarrayPreviewWidget(QtWidgets.QWidget):
     def __init__(self, na_frame, *args, **kwargs):
         super(CNdarrayPreviewWidget, self).__init__(*args, **kwargs)
+        self.b_do_draw_histogram = False
+        self.i_hist_w = 256 # this is constant for all 8 bit video!
+        self.i_hist_h = 100
+        self.t_hist_frame_color = (255, 0, 0)
+        self.t_hist_bin_color = (255, 255, 0)
+        self.na_hist = None
 
         if na_frame.ndim != 3 or na_frame.shape[2] != 3:
             raise ValueError("Unexpected frame shape: %s" % repr(na_frame.shape))
 
+        self.na_frame  = na_frame
         self.i_frame_h = na_frame.shape[0]
         self.i_frame_w = na_frame.shape[1]
         self.i_ncolor_channels = na_frame.shape[2]
+
         self.oc_qimage = QtGui.QImage(
-            na_frame.data,
+            self.na_frame.data,
             self.i_frame_w,
             self.i_frame_h,
-            na_frame.strides[0],
+            self.na_frame.strides[0],
             QtGui.QImage.Format_RGB888
         )
         self.setFixedSize(self.i_frame_w, self.i_frame_h)
 
+    def draw_histogram(self, b_flag):
+        if b_flag: self.b_do_draw_histogram = True
+        else: self.b_do_draw_histogram = False
+
     def paintEvent(self, event):
+        if self.b_do_draw_histogram:
+            # draw histogram in the top left corner of the frame
+            # the self.na_frame.shape is expected to be (H x W x 3)
+            # with dtype == unit8
+            # Calculate the histogram (bin height values)
+            self.na_hist = cv.calcHist([self.na_frame], [0], None, [self.i_hist_w], [0,self.i_hist_w])
+            # normalize the histogram to it's own (fixed) height
+            self.na_hist /= (self.na_hist.max() / self.i_hist_h)
+
+            # draw frame around the histogram
+            # bottom (horizontal) line
+            self.na_frame[self.i_hist_h, 0:self.i_hist_w, :] = self.t_hist_frame_color
+            # right side (vertical) line
+            self.na_frame[0:self.i_hist_h, self.i_hist_w, :] = self.t_hist_frame_color
+
+            # draw histogram bins
+            self.i_hbar_top = 0
+            for i in np.arange(self.i_hist_w):
+                self.i_hbar_top = self.i_hist_h - self.na_hist[i,0].astype(np.int32)
+                self.na_frame[self.i_hbar_top:self.i_hist_h, i, :] = self.t_hist_bin_color
+
         p = QtGui.QPainter(self)
         p.drawImage(event.rect(), self.oc_qimage)
     #
@@ -349,6 +383,9 @@ class COpenCVPreviewWindow(QtWidgets.QMainWindow):
         if self.__frame_cap_thread is None:
             raise ValueError("Unallocated camera object detected")
         return self.__frame_cap_thread.read_prop_sync(self.i_camera_idx, i_prop_id)
+
+    def draw_histogram(self, b_flag):
+        self.__oc_canvas.draw_histogram(b_flag)
 
     def disable_ui_controls(self):
         pass
@@ -631,6 +668,10 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.toolbar.addWidget(self.sld_excitation)
         self.toolbar.addSeparator()
 
+        self.ch_box_hist = QtWidgets.QCheckBox("draw histogram")
+        self.toolbar.addWidget(self.ch_box_hist)
+        self.ch_box_hist.stateChanged.connect(self.__cb_on_draw_histogram_ch_box_state_changed)
+
         # top side tool-bar
         self.addToolBar(self.toolbar)
 
@@ -663,6 +704,12 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         if not self.is_started(): return
         i_val = int(i_new_value*(0x0FFF)/100)|0x3000
         self.update_cap_prop(cv.CAP_PROP_HUE, (i_val>>4) & 0x00FF)
+
+    def __cb_on_draw_histogram_ch_box_state_changed(self, event):
+        if self.ch_box_hist.isChecked():
+            self.draw_histogram(True)
+        else:
+            self.draw_histogram(False)
 
     def __reset_HW(self):
         # reset CMOS
