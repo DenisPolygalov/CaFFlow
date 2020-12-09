@@ -48,8 +48,6 @@ def main():
     oc_pc1_wiper = None
     oc_register = None
     oc_iproj = None
-
-    l_frames = []
     i_frame_id = 0
 
     # read the movie frame by frame, register frames, stack with raw frame and add into the l_frames
@@ -82,7 +80,7 @@ def main():
 
     oc_iproj.finalize_projection()
 
-    fig, axs = plt.subplots(1, 2, constrained_layout=True)
+    _, axs = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
     axs[0].imshow(oc_iproj.d_IPROJ['IPROJ_max'])
     axs[0].set_title('Maximum Intensity Projection')
     axs[1].imshow(oc_iproj.d_IPROJ['IPROJ_std'])
@@ -94,13 +92,10 @@ def main():
 if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
-    from mendouscopy.player import moshow
     from mendouscopy.mupamovie import CMuPaMovieTiff
     from mendouscopy.filtering import CPrinCompWiper
     from mendouscopy.registration import CFrameRegECC
     from mendouscopy.iproj import CIntensityProjector
-    import numpy as np
-    import cv2
     import matplotlib.pyplot as plt
     main()
 #

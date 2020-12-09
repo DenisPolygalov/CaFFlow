@@ -203,7 +203,7 @@ class CMuStreamVideoWriter(object):
         self.l_video_writers[i_sink_id].write_time_stamp(i_sink_id, f_ts)
 
     def get_current_rses_dir(self):
-        for i_idx, oc_writer in enumerate(self.l_video_writers):
+        for _, oc_writer in enumerate(self.l_video_writers):
             if oc_writer is not None:
                 return oc_writer.get_current_rses_dir()
         return None
