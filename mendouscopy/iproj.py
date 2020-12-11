@@ -41,8 +41,8 @@ class CIntensityProjector(object):
         self.na_iproj_max = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_idx_max = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
 
-        self.na_iproj_min = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
-        self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
+        # self.na_iproj_min = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+        # self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
 
         self.na_iproj_std_delta = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_iproj_std_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
@@ -66,8 +66,8 @@ class CIntensityProjector(object):
         self.na_iproj_max[self.na_idx_max] = na_input[self.na_idx_max]
 
         # Minimum Intensity Projection
-        np.less(na_input, self.na_iproj_min, out=self.na_idx_min)
-        self.na_iproj_min[self.na_idx_min] = na_input[self.na_idx_min]
+        # np.less(na_input, self.na_iproj_min, out=self.na_idx_min)
+        # self.na_iproj_min[self.na_idx_min] = na_input[self.na_idx_min]
 
         # Standard Deviation Intensity Projection
         # https://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -79,7 +79,7 @@ class CIntensityProjector(object):
 
     def finalize_projection(self):
         self.d_IPROJ['IPROJ_max'] = self.na_iproj_max
-        self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
+        # self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
         self.d_IPROJ['IPROJ_std'] = np.sqrt( self.na_iproj_std_M2 / (self._i_nframes_proc + 1 - self.i_ddof) )
         self._b_projection_finalized = True
     #

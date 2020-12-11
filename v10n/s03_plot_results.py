@@ -5,14 +5,16 @@ import os
 import sys
 import configparser
 
+import cv2 as cv
 import numpy as np
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from skimage.external import tifffile
 
 
 """
-Copyright (C) 2018, 2019 Denis Polygalov,
+Copyright (C) 2018-2020 Denis Polygalov,
 Laboratory for Circuit and Behavioral Physiology,
 RIKEN Center for Brain Science, Saitama, Japan.
 
@@ -39,7 +41,7 @@ class CSimpleDataViewer(object):
         self.l_edges = []
         self.f_rect_sz = 15
         self.f_rect_hsz = self.f_rect_sz/2
-        self.oc_fig, self.na_axes = plt.subplots(1,2,figsize=(15, 10))
+        self.oc_fig, self.na_axes = plt.subplots(1, 2, figsize=(14,8))
 
         self.na_ROI_mask = d_fluo_data['ROI_mask']
 
@@ -54,10 +56,10 @@ class CSimpleDataViewer(object):
             self.na_ROIxy[ii,0] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][0] - self.f_rect_hsz
             self.na_ROIxy[ii,1] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][1] - self.f_rect_hsz
 
-        self.na_axes[0].imshow(self.na_ROI_mask_f32, cmap=cm.jet)
-        self.na_axes[0].set_aspect('equal', 'box')
         t_xy = (self.na_ROIxy[0,1], self.na_ROIxy[0,0])
         self.oc_rect = patches.Rectangle(t_xy, self.f_rect_sz, self.f_rect_sz, linewidth=2, edgecolor='k', facecolor='none')
+        self.na_axes[0].imshow(self.na_ROI_mask_f32, cmap=cm.jet)
+        self.na_axes[0].set_aspect('equal', 'box')
         self.na_axes[0].add_patch(self.oc_rect)
 
         f_vert_shift = 0.0
@@ -69,8 +71,6 @@ class CSimpleDataViewer(object):
             f_vert_shift += np.abs(na_dFF[...,ii].max() - na_dFF[...,ii].min())
             self.l_edges.append(f_vert_shift)
         self.na_axes[1].get_yaxis().set_visible(False)
-
-        self.connect()
         plt.tight_layout()
     #
     def connect(self):
@@ -134,12 +134,28 @@ def plot_result(s_input_dir, s_fname_prefix):
     s_fluo_data_in_fname = os.path.join(s_input_dir, s_fname_prefix + "fluo.npy")
     d_fluo_data = np.load(s_fluo_data_in_fname, allow_pickle=True).item()
     s_out_fname = os.path.join(s_input_dir, s_fname_prefix + "ROI_and_dFF.png")
+    s_out_fname_iproj_max = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_max.tiff")
+    s_out_fname_iproj_std = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_std.tiff")
 
     print("Input data file:\t%s" % s_fluo_data_in_fname)
     for s_key in d_fluo_data.keys():
         DVAR(d_fluo_data[s_key], s_var_name=s_key)
 
-    CSimpleDataViewer(d_fluo_data)
+    na_img_16U = cv.normalize(d_fluo_data['IPROJ_max'], None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U)
+    with tifffile.TiffWriter(s_out_fname_iproj_max, bigtiff=False) as h_file:
+        h_file.save(na_img_16U)
+
+    na_img_16U = cv.normalize(d_fluo_data['IPROJ_std'], None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U)
+    with tifffile.TiffWriter(s_out_fname_iproj_std, bigtiff=False) as h_file:
+        h_file.save(na_img_16U)
+
+    # create data viewer
+    # we have to keep reference to this object
+    # otherwise it won't work
+    h_viewer = CSimpleDataViewer(d_fluo_data)
+    # so use this kind of artificial solution
+    # in order to avoid complains about unused variable:
+    h_viewer.connect()
     plt.savefig(s_out_fname, dpi=300, quality=100, bbox_inches='tight')
     plt.show()
 #
