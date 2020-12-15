@@ -156,7 +156,7 @@ def plot_result(s_input_dir, s_fname_prefix):
     # so use this kind of artificial solution
     # in order to avoid complains about unused variable:
     h_viewer.connect()
-    plt.savefig(s_out_fname, dpi=300, quality=100, bbox_inches='tight')
+    plt.savefig(s_out_fname, dpi=300, bbox_inches='tight')
     plt.show()
 #
 
