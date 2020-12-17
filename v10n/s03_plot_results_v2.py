@@ -7,6 +7,7 @@ import configparser
 
 import cv2 as cv
 import numpy as np
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from skimage.external import tifffile
 
@@ -62,7 +63,7 @@ def plot_result(s_input_dir, s_fname_prefix):
     # create data viewer
     # we have to keep reference to this object
     # otherwise it won't work
-    h_viewer = CSimpleDataViewer(d_fluo_data)
+    h_viewer = CPerROIDataViewer(d_fluo_data)
     # so use this kind of artificial solution
     # in order to avoid complains about unused variable:
     h_viewer.connect()
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from gui.view import CSimpleDataViewer
+    from gui.view import CPerROIDataViewer
 
     i_target_section = None
     # i_target_section = 0 # use this to process single section only
