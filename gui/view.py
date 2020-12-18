@@ -123,40 +123,44 @@ class CPerROIDataViewer(object):
         self.f_rect_sz = 15
         self.f_rect_hsz = self.f_rect_sz/2
         self.oc_fig = plt.figure(figsize=(14,8))
-        oc_gspec = GridSpec(2, 2, figure=self.oc_fig)
+        oc_gspec = GridSpec(2, 2, height_ratios=[3, 1], figure=self.oc_fig)
         self.na_axes = np.zeros([2,2], dtype=np.object)
         self.na_axes[0,0] = self.oc_fig.add_subplot(oc_gspec[0,0])
-        self.na_axes[0,1] = self.oc_fig.add_subplot(oc_gspec[0,1])
+        self.na_axes[0,1] = self.oc_fig.add_subplot(oc_gspec[0,1], sharex=self.na_axes[0,0], sharey=self.na_axes[0,0])
         self.na_axes[1,0] = self.oc_fig.add_subplot(oc_gspec[1,:])
 
         self.na_IPROJ_max = d_fluo_data['IPROJ_max']
         self.na_IPROJ_std = d_fluo_data['IPROJ_std']
         self.na_ROI_mask = d_fluo_data['ROI_mask']
-
-        self.na_ROI_contours = np.zeros_like(self.na_ROI_mask)
-        self.convert_ROI_mask2contours(self.na_ROI_mask, self.na_ROI_contours)
-        self.na_ROI_contours = cv.normalize(self.na_ROI_contours, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
-        self.na_ROI_contours[np.where(self.na_ROI_contours == 0)] = np.nan
-
         self.na_dFF = d_fluo_data['dFF']
         self.i_nframes, self.i_nROIs = self.na_dFF.shape
 
+        # note that self.na_ROIxy is not a center of the ROI, but shifted self.f_rect_hsz pixels!
         self.na_ROIxy = np.zeros([self.i_nROIs,2], dtype=np.float32)
         for ii in range(self.i_nROIs):
             self.na_ROIxy[ii,0] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][0] - self.f_rect_hsz
             self.na_ROIxy[ii,1] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][1] - self.f_rect_hsz
+
+        self.na_ROI_contours = np.zeros_like(self.na_ROI_mask)
+        self.convert_ROI_mask2contours()
+        self.na_ROI_filled_mask = np.zeros_like(self.na_ROI_mask)
+        self.convert_ROI_mask2filled_mask()
+        # self.na_ROI_contours = cv.normalize(self.na_ROI_contours, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
+        # self.na_ROI_contours[np.where(self.na_ROI_contours == 0)] = np.nan
 
         t_xy = (self.na_ROIxy[0,1], self.na_ROIxy[0,0])
         self.oc_rect_l = patches.Rectangle(t_xy, self.f_rect_sz, self.f_rect_sz, linewidth=2, edgecolor='orange', facecolor='none')
         self.oc_rect_r = patches.Rectangle(t_xy, self.f_rect_sz, self.f_rect_sz, linewidth=2, edgecolor='orange', facecolor='none')
 
         self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
-        self.na_axes[0,0].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
+        # self.na_axes[0,0].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
+        self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
         self.na_axes[0,0].set_aspect('equal', 'box')
         self.na_axes[0,0].add_patch(self.oc_rect_l)
 
-        self.na_axes[0,1].imshow(self.na_IPROJ_std, cmap=cm.gray, alpha=1.0)
-        self.na_axes[0,1].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
+        # self.na_axes[0,1].imshow(self.na_IPROJ_std, cmap=cm.jet, alpha=1.0)
+        self.na_axes[0,1].imshow(self.na_IPROJ_max, cmap=cm.jet, alpha=1.0)
+        # self.na_axes[0,1].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
         self.na_axes[0,1].set_aspect('equal', 'box')
         self.na_axes[0,1].add_patch(self.oc_rect_r)
 
@@ -169,14 +173,22 @@ class CPerROIDataViewer(object):
         # Return value is a connection id that can be used with mpl_disconnect()
         self.i_conn_id = self.oc_fig.canvas.mpl_connect('button_press_event', self.__cb_on_click)
     #
-    def convert_ROI_mask2contours(self, na_ROI_mask, na_ROI_contours):
-        i_nROIs = na_ROI_mask.max()
-        na_canvas = np.zeros(na_ROI_mask.shape, dtype=np.uint8)
+    def convert_ROI_mask2contours(self):
+        i_nROIs = self.na_ROI_mask.max()
+        na_canvas = np.zeros(self.na_ROI_mask.shape, dtype=np.uint8)
         for i_roi_id in range(i_nROIs):
-            na_canvas[np.where(na_ROI_mask == (i_roi_id + 1))] = i_roi_id + 1
+            na_canvas[np.where(self.na_ROI_mask == (i_roi_id + 1))] = i_roi_id + 1
             _, l_contours, _ = cv.findContours(na_canvas, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-            cv.drawContours(na_ROI_contours, l_contours, len(l_contours)-1, (1,0,0), 2)
+            cv.drawContours(self.na_ROI_contours, l_contours, len(l_contours)-1, (1,0,0), 2)
             na_canvas.fill(0)
+    #
+    def convert_ROI_mask2filled_mask(self):
+        self.na_ROI_filled_mask[...] = self.na_ROI_mask[...]
+        self.na_ROI_filled_mask[np.where(self.na_ROI_mask > 0)] = 1
+        for i_roi_id in range(self.i_nROIs):
+            i_ROI_CoM_x = int(self.na_ROIxy[i_roi_id,1] + self.f_rect_hsz)
+            i_ROI_CoM_y = int(self.na_ROIxy[i_roi_id,0] + self.f_rect_hsz)
+            self.na_ROI_filled_mask[i_ROI_CoM_y, i_ROI_CoM_x] = 2
     #
     def select_ROI(self, i_ROI_idx):
         if i_ROI_idx < 0: return
