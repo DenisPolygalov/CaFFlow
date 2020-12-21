@@ -360,7 +360,7 @@ if __name__ == '__main__':
     import cv2 as cv
     import numpy as np
     import matplotlib.pyplot as plt
-    from skimage.external import tifffile
+    import tifffile
 
     # Each of the functions below have sys.exit() at it's end.
     # Enjoy one by one.

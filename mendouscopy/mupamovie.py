@@ -7,7 +7,7 @@ import zipfile as zf
 import numpy as np
 import pandas
 import cv2 as cv
-from skimage.external import tifffile
+import tifffile
 
 
 """
@@ -443,7 +443,7 @@ class CSingleTiffWriter(object):
         if os.path.isfile(s_fname_out) and not b_delete_existing:
             raise ValueError("Requested output file already exist. Die in order to prevent data loss.")
         self.s_fname_out = s_fname_out
-        self.oc_tiff = tifffile.TiffWriter(self.s_fname_out, bigtiff=True, software="mendouscopy")
+        self.oc_tiff = tifffile.TiffWriter(self.s_fname_out, bigtiff=True)
     def write_next_frame(self, na_in):
         if na_in.dtype == np.uint16:
             self.oc_tiff.save(na_in, compress=6)

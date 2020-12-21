@@ -38,27 +38,10 @@ class CTestImportPackages(unittest.TestCase):
             return False
 
         try:
-            import skimage
-            print("\nINFO: scikit-image package version: %s" % skimage.__version__)
+            import tifffile
+            print("\nINFO: tifffile package version: %s" % tifffile.__version__)
         except ImportError:
-            print("\nERROR: The scikit-image package is missing. Please install it.")
-            return False
-
-        try:
-            from skimage.external import tifffile
-            print("\nINFO: scikit-image tifffile package version: %s" % tifffile.__version__)
-        except ImportError:
-            print("\nERROR: The tifffile support is missing in the scikit-image package.")
-            return False
-
-        try:
-            from skimage import external
-            if hasattr(external, 'tifffile'):
-                print("\nINFO: tifffile class found in scikit-image module")
-            else:
-                raise ImportError("Your scikit-image package does not support tifffile class")
-        except ImportError:
-            print("\nERROR: scikit-image package missing TIFF files support.")
+            print("\nERROR: The tifffile package is missing. Please install it.")
             return False
 
         return True

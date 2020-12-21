@@ -63,7 +63,7 @@ if __name__ == '__main__':
     import cv2
     import numpy as np
     import matplotlib.pyplot as plt
-    from skimage.external import tifffile
+    import tifffile
     main()
 #
 

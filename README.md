@@ -103,7 +103,7 @@ Launch the 'Terminal' application and type:
 
 Install necessary Python packages (the command syntax is common across Windows/MacOS/FreeBSD):
 
-`(cafflow)> conda install opencv numpy pandas scipy scikit-image`
+`(cafflow)> conda install opencv numpy pandas scipy tifffile`
 
 The set of packages above is sufficient to run analysis without visualization (on a headless server for example) and GUI applications.
 

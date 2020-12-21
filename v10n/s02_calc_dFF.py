@@ -5,7 +5,7 @@ import os
 import sys
 import configparser
 
-from skimage.external import tifffile
+import tifffile
 
 
 """

@@ -81,7 +81,7 @@ if __name__ == '__main__':
     from mendouscopy.filtering import CPrinCompWiper
     import numpy as np
     import matplotlib.pyplot as plt
-    from skimage.external import tifffile
+    import tifffile
     main()
 #
 
