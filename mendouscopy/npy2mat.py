@@ -50,12 +50,12 @@ def process_npy_file(s_input_npy_file, s_output_mat_file):
             if  isinstance(d_data_in[s_key][0], int) or \
                 isinstance(d_data_in[s_key][0], float) or \
                 isinstance(d_data_in[s_key][0], np.ndarray):
-                    d_data_out[s_key] = np.array(d_data_in[s_key])
+                    d_data_out[s_key] = np.array(d_data_in[s_key], dtype=object)
             else:
                 if s_key == "ROI_data":
                     s_key_out = "ROI_mask_pix_idx"
                     l_val_out = process_ROI_data(d_data_in[s_key], "mask_pix_idx")
-                    d_data_out[s_key_out] = np.array(l_val_out)
+                    d_data_out[s_key_out] = np.array(l_val_out, dtype=object)
                     print("\t\t", s_key_out, type(d_data_out[s_key_out]))
                     if len(d_data_in[s_key]) > 0 and "mask_weights" in d_data_in[s_key][0]:
                         s_key_out = "ROI_mask_weights"
