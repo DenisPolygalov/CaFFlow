@@ -5,11 +5,10 @@ import os
 import sys
 import configparser
 
+import tifffile
 import cv2 as cv
 import numpy as np
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-import tifffile
 
 
 """
@@ -41,14 +40,14 @@ def check_dir(s_dst_dir):
 #
 
 
-def plot_result(s_input_dir, s_fname_prefix):
+def plot_result(s_input_dir, s_input_ini_file, s_fname_prefix):
     s_fluo_data_in_fname = os.path.join(s_input_dir, s_fname_prefix + "fluo.npy")
     d_fluo_data = np.load(s_fluo_data_in_fname, allow_pickle=True).item()
     s_out_fname = os.path.join(s_input_dir, s_fname_prefix + "ROI_and_dFF.png")
     s_out_fname_iproj_max = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_max.tiff")
     s_out_fname_iproj_std = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_std.tiff")
+    print("INFO: input file: %s" % s_fluo_data_in_fname)
 
-    print("Input data file:\t%s" % s_fluo_data_in_fname)
     for s_key in d_fluo_data.keys():
         DVAR(d_fluo_data[s_key], s_var_name=s_key)
 
@@ -113,10 +112,11 @@ if __name__ == '__main__':
             s_dst_path_alt, s_fext = os.path.splitext(s_dst_path)
             s_dst_path = s_dst_path_alt + "WHT" + s_fext
 
+        print("INFO: input file: %s" % s_ini_file)
         print("INFO: input file: %s" % s_dst_path)
 
         s_input_dir = os.path.join(s_work_dir, s_section)
-        plot_result(s_input_dir, s_out_file_prefix)
+        plot_result(s_input_dir, s_ini_file, s_out_file_prefix)
 #
 
 
