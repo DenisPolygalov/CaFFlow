@@ -119,7 +119,7 @@ class CSimpleDataViewer(object):
 
 
 class CPerROIDataViewer(object):
-    def __init__(self, d_fluo_data):
+    def __init__(self, d_fluo_data, event_peaks=None, event_spans=None):
         self.f_rect_sz = 15
         self.f_rect_hsz = self.f_rect_sz/2
         self.oc_fig = plt.figure(figsize=(14,8))
@@ -134,6 +134,9 @@ class CPerROIDataViewer(object):
         self.na_ROI_mask = d_fluo_data['ROI_mask']
         self.na_dFF = d_fluo_data['dFF']
         self.i_nframes, self.i_nROIs = self.na_dFF.shape
+
+        self.na_event_peaks = None
+        self.na_event_spans = None
 
         # note that self.na_ROIxy is not a center of the ROI, but shifted self.f_rect_hsz pixels!
         self.na_ROIxy = np.zeros([self.i_nROIs,2], dtype=np.float32)
@@ -167,6 +170,26 @@ class CPerROIDataViewer(object):
         self.na_axes[1,0].plot(self.na_dFF[...,0], 'b', pickradius=5)
         self.na_axes[1,0].set_xlim(0, self.i_nframes)
         self.na_axes[1,0].set_ylim(-5, 1.05 * self.na_dFF.max())
+
+        if type(event_peaks) is np.ndarray:
+            if event_peaks.ndim != 2:
+                raise ValueError("The event_peaks array must be 2D array")
+            if self.na_dFF.shape[0] != event_peaks.shape[0] or self.na_dFF.shape[1] != event_peaks.shape[1]:
+                raise ValueError("Shapes of dFF array and event_peaks array must be the same")
+            self.na_event_peaks = event_peaks
+            na_epeak_idx = np.where(self.na_event_peaks[:,0])[0]
+            self.na_axes[1,0].plot(na_epeak_idx, self.na_dFF[na_epeak_idx,0], 'ro')
+
+        if type(event_spans) is np.ndarray:
+            if event_spans.ndim != 2:
+                raise ValueError("The event_spans array must be 2D array")
+            if self.na_dFF.shape[0] != event_spans.shape[0] or self.na_dFF.shape[1] != event_spans.shape[1]:
+                raise ValueError("Shapes of dFF array and event_spans array must be the same")
+            self.na_event_spans = event_spans
+            na_espan_idx = np.where(self.na_event_spans[:,0])[0]
+            na_event_ymax = self.na_dFF[na_espan_idx,0]
+            na_event_ymin = np.zeros_like(na_event_ymax)
+            self.na_axes[1,0].vlines(na_espan_idx, na_event_ymin, na_event_ymax, 'm')
         plt.tight_layout()
     #
     def connect(self):
@@ -206,8 +229,19 @@ class CPerROIDataViewer(object):
         return i_ret
     #
     def plot_dFF_trace(self, i_trace_idx):
-        self.na_axes[1,0].lines.pop(0)
+        self.na_axes[1,0].clear()
         self.na_axes[1,0].plot(self.na_dFF[...,i_trace_idx], 'b', pickradius=5)
+
+        if type(self.na_event_peaks) is np.ndarray:
+            na_epeak_idx = np.where(self.na_event_peaks[:,i_trace_idx])[0]
+            self.na_axes[1,0].plot(na_epeak_idx, self.na_dFF[na_epeak_idx, i_trace_idx], 'ro')
+
+        if type(self.na_event_spans) is np.ndarray:
+            na_espan_idx = np.where(self.na_event_spans[:,i_trace_idx])[0]
+            na_event_ymax = self.na_dFF[na_espan_idx, i_trace_idx]
+            na_event_ymin = np.zeros_like(na_event_ymax)
+            self.na_axes[1,0].vlines(na_espan_idx, na_event_ymin, na_event_ymax, 'm')
+
         self.na_axes[1,0].draw_artist(self.na_axes[1,0].lines[0])
     #
     def __cb_on_click(self, event):
