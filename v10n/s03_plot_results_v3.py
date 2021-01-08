@@ -5,8 +5,6 @@ import os
 import sys
 import configparser
 
-import tifffile
-import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -47,8 +45,6 @@ def plot_result(s_input_dir, s_input_ini_file, s_fname_prefix):
     s_fluo_data_in_fname = os.path.join(s_input_dir, s_fname_prefix + "fluo.npy")
     d_fluo_data = np.load(s_fluo_data_in_fname, allow_pickle=True).item()
     s_out_fname = os.path.join(s_input_dir, s_fname_prefix + "ROI_and_dFF.png")
-    s_out_fname_iproj_max = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_max.tiff")
-    s_out_fname_iproj_std = os.path.join(s_input_dir, s_fname_prefix + "IPROJ_std.tiff")
     print("INFO: input file: %s" % s_fluo_data_in_fname)
 
     for s_key in d_fluo_data.keys():
@@ -76,7 +72,7 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from mendouscopy.events import detect_events_by_iqr
+    # from mendouscopy.events import detect_events_by_iqr
     from mendouscopy.events import detect_events_by_find_peaks
     from gui.view import CPerROIDataViewer
 
