@@ -50,16 +50,13 @@ def plot_result(s_input_dir, s_input_ini_file, s_fname_prefix):
     for s_key in d_fluo_data.keys():
         DVAR(d_fluo_data[s_key], s_var_name=s_key)
 
-    na_dFF_evt_peaks = np.zeros(d_fluo_data['dFF'].shape, dtype=np.int64)
-    na_dFF_evt_spans = np.zeros(d_fluo_data['dFF'].shape, dtype=np.int64)
-
-    # detect_events_by_iqr(d_fluo_data['dFF'], na_dFF_evt_peaks, na_dFF_evt_spans, dict(oc_local_cfg['event_detection']))
-    detect_events_by_find_peaks(d_fluo_data['dFF'], na_dFF_evt_peaks, na_dFF_evt_spans, dict(oc_local_cfg['event_detection']))
-
     # create data viewer
     # we have to keep reference to this object
     # otherwise it won't work
-    h_viewer = CPerROIDataViewer(d_fluo_data, event_peaks=na_dFF_evt_peaks, event_spans=na_dFF_evt_spans)
+    h_viewer = CPerROIDataViewer(d_fluo_data, \
+        event_peaks=d_fluo_data['dFF_evt_peaks'], \
+        event_spans=d_fluo_data['dFF_evt_spans'] \
+    )
     # so use this kind of artificial solution
     # in order to avoid complains about unused variable:
     h_viewer.connect()
@@ -72,7 +69,7 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    # from mendouscopy.events import detect_events_by_iqr
+    from mendouscopy.events import detect_events_by_iqr
     from mendouscopy.events import detect_events_by_find_peaks
     from gui.view import CPerROIDataViewer
 

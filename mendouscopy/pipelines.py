@@ -18,6 +18,8 @@ from .rois import CFrameWiseROIDetector
 from .rois import CMovieWiseROIPicker
 from .rois import CMovieWiseWeightedROIPicker
 from .iproj import CIntensityProjector
+from .events import detect_events_by_iqr
+from .events import detect_events_by_find_peaks
 
 
 """
@@ -132,6 +134,23 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
 
     # add all key-value pairs from oc_iproj to oc_roi_picker
     oc_roi_picker.d_FLUO.update(oc_iproj.d_IPROJ)
+
+    # prepare storage for event detection data
+    na_dFF_evt_peaks = np.zeros(oc_roi_picker.d_FLUO['dFF'].shape, dtype=np.int64)
+    na_dFF_evt_spans = np.zeros(oc_roi_picker.d_FLUO['dFF'].shape, dtype=np.int64)
+
+    # detect events
+    d_param_evt = dict(d_param['event_detection'])
+    if 'iqr' in d_param_evt['detection_method']:
+        detect_events_by_iqr(oc_roi_picker.d_FLUO['dFF'], na_dFF_evt_peaks, na_dFF_evt_spans, d_param_evt)
+    elif 'find_peaks' in d_param_evt['detection_method']:
+        detect_events_by_find_peaks(oc_roi_picker.d_FLUO['dFF'], na_dFF_evt_peaks, na_dFF_evt_spans, d_param_evt)
+    else:
+        raise ValueError("unknown event detection method provided")
+
+    print("Number of events detected: %i" % np.sum(na_dFF_evt_peaks))
+    oc_roi_picker.d_FLUO['dFF_evt_peaks'] = na_dFF_evt_peaks
+    oc_roi_picker.d_FLUO['dFF_evt_spans'] = na_dFF_evt_spans
 
     # save the results
     np.save(s_fluo_data_out_fname, oc_roi_picker.d_FLUO)
