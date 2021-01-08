@@ -168,8 +168,7 @@ class CPerROIDataViewer(object):
         self.na_axes[0,1].add_patch(self.oc_rect_r)
 
         self.na_axes[1,0].plot(self.na_dFF[...,0], 'b', pickradius=5)
-        self.na_axes[1,0].set_xlim(0, self.i_nframes)
-        self.na_axes[1,0].set_ylim(-5, 1.05 * self.na_dFF.max())
+        self.na_axes[1,0].hlines(np.median(self.na_dFF[:,0]), 0, self.na_dFF.shape[0], colors='b', linestyles='dashed')
 
         if type(event_peaks) is np.ndarray:
             if event_peaks.ndim != 2:
@@ -190,6 +189,9 @@ class CPerROIDataViewer(object):
             na_event_ymax = self.na_dFF[na_espan_idx,0]
             na_event_ymin = np.zeros_like(na_event_ymax)
             self.na_axes[1,0].vlines(na_espan_idx, na_event_ymin, na_event_ymax, 'm')
+
+        self.na_axes[1,0].set_xlim(0, self.i_nframes)
+        self.na_axes[1,0].set_ylim(-5, 1.05 * self.na_dFF.max())
         plt.tight_layout()
     #
     def connect(self):
@@ -231,6 +233,7 @@ class CPerROIDataViewer(object):
     def plot_dFF_trace(self, i_trace_idx):
         self.na_axes[1,0].clear()
         self.na_axes[1,0].plot(self.na_dFF[...,i_trace_idx], 'b', pickradius=5)
+        self.na_axes[1,0].hlines(np.median(self.na_dFF[:,i_trace_idx]), 0, self.na_dFF.shape[0], colors='b', linestyles='dashed')
 
         if type(self.na_event_peaks) is np.ndarray:
             na_epeak_idx = np.where(self.na_event_peaks[:,i_trace_idx])[0]
@@ -242,6 +245,8 @@ class CPerROIDataViewer(object):
             na_event_ymin = np.zeros_like(na_event_ymax)
             self.na_axes[1,0].vlines(na_espan_idx, na_event_ymin, na_event_ymax, 'm')
 
+        self.na_axes[1,0].set_xlim(0, self.i_nframes)
+        self.na_axes[1,0].set_ylim(-5, 1.05 * self.na_dFF.max())
         self.na_axes[1,0].draw_artist(self.na_axes[1,0].lines[0])
     #
     def __cb_on_click(self, event):
