@@ -30,12 +30,13 @@ class CIntensityProjector(object):
     At the end of the movie after calling the finalize_projection() method
     calculate various types (max, min, std) of intensity projections.
     """
-    def __init__(self, i_frame_h, i_frame_w):
+    def __init__(self, i_frame_h, i_frame_w, features=None):
         # frames are counted starting from zero, each time when the process_frame() method called.
         self._i_nframes_proc = -1
         self._b_projection_finalized = False
         self.i_frame_h = i_frame_h
         self.i_frame_w = i_frame_w
+        self.i_fet_frame_idx = 0
         self.d_IPROJ = {}
 
         self.na_iproj_max = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
@@ -48,6 +49,23 @@ class CIntensityProjector(object):
         self.na_iproj_std_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_iproj_std_M2 = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.i_ddof = 0
+
+        if isinstance(features, np.ndarray):
+            if features.ndim > 2 or features.ndim < 1:
+                raise ValueError("Unsupported shape of the features array")
+
+            if features.ndim == 2 and features.shape[0] >= features.shape[1]:
+                self.na_featured_frame_ids = np.where(features.sum(axis=1) > 0)[0]
+
+            elif features.ndim == 2 and features.shape[0] <  features.shape[1]:
+                self.na_featured_frame_ids = np.where(features.sum(axis=0) > 0)[0]
+
+            elif features.ndim == 1:
+                self.na_featured_frame_ids = np.where(features > 0)[0]
+
+            else:
+                self.na_featured_frame_ids = None
+        self.na_iproj_fet = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
     def process_frame(self, na_input, b_verbose=False):
         if self._b_projection_finalized:
@@ -77,10 +95,18 @@ class CIntensityProjector(object):
         self.na_iproj_std_mean += self.na_iproj_std_delta / (self._i_nframes_proc + 1)
         self.na_iproj_std_M2 += self.na_iproj_std_delta * (na_input - self.na_iproj_std_mean)
 
+        # Features (local) Intensity Projection
+        if isinstance(self.na_featured_frame_ids, np.ndarray) and \
+            self.i_fet_frame_idx < self.na_featured_frame_ids.size:
+            if self._i_nframes_proc == self.na_featured_frame_ids[self.i_fet_frame_idx]:
+                self.na_iproj_fet[...] += (na_input.astype(np.float64) / na_input.max())
+                self.i_fet_frame_idx += 1
+
     def finalize_projection(self):
         self.d_IPROJ['IPROJ_max'] = self.na_iproj_max
         # self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
         self.d_IPROJ['IPROJ_std'] = np.sqrt( self.na_iproj_std_M2 / (self._i_nframes_proc + 1 - self.i_ddof) )
+        self.d_IPROJ['IPROJ_fet'] = self.na_iproj_fet / self.i_fet_frame_idx
         self._b_projection_finalized = True
     #
 #

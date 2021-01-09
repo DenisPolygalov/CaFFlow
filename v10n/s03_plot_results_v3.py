@@ -69,8 +69,6 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from mendouscopy.events import detect_events_by_iqr
-    from mendouscopy.events import detect_events_by_find_peaks
     from gui.view import CPerROIDataViewer
 
     i_target_section = None

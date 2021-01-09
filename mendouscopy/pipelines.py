@@ -113,27 +113,14 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     # create a multi-part movie object
     oc_reg_movie = CMuPaMovieTiff((s_register_in_fname,)) # notice the comma(!)
 
-    # object for intensity projections calculation
-    oc_iproj = None
-
     i_frame_id = 0 # <--- RESET THE FRAME COUNTER ---
 
     while(oc_reg_movie.read_next_frame()):
         if i_frame_id % 100 == 0: print("process frame (extract fluorescence traces): %i" % i_frame_id)
-        if i_frame_id == 0:
-            oc_iproj = CIntensityProjector(
-                oc_reg_movie.na_frame.shape[0], # frame height
-                oc_reg_movie.na_frame.shape[1]  # frame width
-            )
-        oc_iproj.process_frame(oc_reg_movie.na_frame)
         oc_roi_picker.extract_fluo_from_frame(oc_reg_movie.na_frame)
         i_frame_id += 1
         if i_max_nframes is not None and i_frame_id >= i_max_nframes: break
-    oc_iproj.finalize_projection()
     oc_roi_picker.finalize_fluo()
-
-    # add all key-value pairs from oc_iproj to oc_roi_picker
-    oc_roi_picker.d_FLUO.update(oc_iproj.d_IPROJ)
 
     # prepare storage for event detection data
     na_dFF_evt_peaks = np.zeros(oc_roi_picker.d_FLUO['dFF'].shape, dtype=np.int64)
@@ -151,6 +138,32 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     print("Number of events detected: %i" % np.sum(na_dFF_evt_peaks))
     oc_roi_picker.d_FLUO['dFF_evt_peaks'] = na_dFF_evt_peaks
     oc_roi_picker.d_FLUO['dFF_evt_spans'] = na_dFF_evt_spans
+
+    # RE-create a multi-part movie object
+    del oc_reg_movie
+    oc_reg_movie = None
+    oc_reg_movie = CMuPaMovieTiff((s_register_in_fname,)) # notice the comma(!)
+
+    # object for intensity projections calculation
+    oc_iproj = None
+
+    i_frame_id = 0 # <--- RESET THE FRAME COUNTER ---
+
+    while(oc_reg_movie.read_next_frame()):
+        if i_frame_id % 100 == 0: print("process frame (calculate intensity projections): %i" % i_frame_id)
+        if i_frame_id == 0:
+            oc_iproj = CIntensityProjector(
+                oc_reg_movie.na_frame.shape[0], # frame height
+                oc_reg_movie.na_frame.shape[1], # frame width
+                features=na_dFF_evt_peaks
+            )
+        oc_iproj.process_frame(oc_reg_movie.na_frame)
+        i_frame_id += 1
+        if i_max_nframes is not None and i_frame_id >= i_max_nframes: break
+    oc_iproj.finalize_projection()
+
+    # add all key-value pairs from oc_iproj to oc_roi_picker
+    oc_roi_picker.d_FLUO.update(oc_iproj.d_IPROJ)
 
     # save the results
     np.save(s_fluo_data_out_fname, oc_roi_picker.d_FLUO)

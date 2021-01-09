@@ -129,11 +129,15 @@ class CPerROIDataViewer(object):
         self.na_axes[0,1] = self.oc_fig.add_subplot(oc_gspec[0,1], sharex=self.na_axes[0,0], sharey=self.na_axes[0,0])
         self.na_axes[1,0] = self.oc_fig.add_subplot(oc_gspec[1,:])
 
+        self.na_IPROJ_fet = d_fluo_data['IPROJ_fet']
         self.na_IPROJ_max = d_fluo_data['IPROJ_max']
         self.na_IPROJ_std = d_fluo_data['IPROJ_std']
         self.na_ROI_mask = d_fluo_data['ROI_mask']
         self.na_dFF = d_fluo_data['dFF']
         self.i_nframes, self.i_nROIs = self.na_dFF.shape
+
+        self.i_bgr_id = 0 # current background image id
+        self.i_numbgr = 3 # number of background images (IPROJ_max, IPROJ_fet, etc).
 
         self.na_event_peaks = None
         self.na_event_spans = None
@@ -148,24 +152,21 @@ class CPerROIDataViewer(object):
         self.convert_ROI_mask2contours()
         self.na_ROI_filled_mask = np.zeros_like(self.na_ROI_mask)
         self.convert_ROI_mask2filled_mask()
-        # self.na_ROI_contours = cv.normalize(self.na_ROI_contours, None, alpha=0, beta=1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_32F)
-        # self.na_ROI_contours[np.where(self.na_ROI_contours == 0)] = np.nan
 
         t_xy = (self.na_ROIxy[0,1], self.na_ROIxy[0,0])
         self.oc_rect_l = patches.Rectangle(t_xy, self.f_rect_sz, self.f_rect_sz, linewidth=2, edgecolor='orange', facecolor='none')
         self.oc_rect_r = patches.Rectangle(t_xy, self.f_rect_sz, self.f_rect_sz, linewidth=2, edgecolor='orange', facecolor='none')
 
-        self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
-        # self.na_axes[0,0].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
+        self.na_axes[0,0].imshow(self.na_IPROJ_fet, cmap=cm.gray, alpha=1.0)
         self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
         self.na_axes[0,0].set_aspect('equal', 'box')
         self.na_axes[0,0].add_patch(self.oc_rect_l)
+        self.na_axes[0,0].set_title("local")
 
-        # self.na_axes[0,1].imshow(self.na_IPROJ_std, cmap=cm.jet, alpha=1.0)
-        self.na_axes[0,1].imshow(self.na_IPROJ_max, cmap=cm.jet, alpha=1.0)
-        # self.na_axes[0,1].imshow(self.na_ROI_contours, cmap=cm.coolwarm, alpha=0.5)
+        self.na_axes[0,1].imshow(self.na_IPROJ_fet, cmap=cm.jet, alpha=1.0)
         self.na_axes[0,1].set_aspect('equal', 'box')
         self.na_axes[0,1].add_patch(self.oc_rect_r)
+        self.na_axes[0,1].set_title("local")
 
         self.na_axes[1,0].plot(self.na_dFF[...,0], 'b', pickradius=5)
         self.na_axes[1,0].hlines(np.median(self.na_dFF[:,0]), 0, self.na_dFF.shape[0], colors='b', linestyles='dashed')
@@ -196,7 +197,8 @@ class CPerROIDataViewer(object):
     #
     def connect(self):
         # Return value is a connection id that can be used with mpl_disconnect()
-        self.i_conn_id = self.oc_fig.canvas.mpl_connect('button_press_event', self.__cb_on_click)
+        self.i_btn_conn_id = self.oc_fig.canvas.mpl_connect('button_press_event', self.__cb_on_click)
+        self.i_key_conn_id = self.oc_fig.canvas.mpl_connect('key_press_event', self.__cb_on_key_press)
     #
     def convert_ROI_mask2contours(self):
         i_nROIs = self.na_ROI_mask.max()
@@ -260,6 +262,36 @@ class CPerROIDataViewer(object):
         self.select_ROI(i_idx)
         self.plot_dFF_trace(i_idx)
         self.oc_fig.canvas.draw_idle()
+    #
+    def __cb_on_key_press(self, event):
+        if event.key == 'b':
+            self.i_bgr_id += 1
+            if self.i_bgr_id >= self.i_numbgr:
+                self.i_bgr_id = 0
+
+            if self.i_bgr_id == 0:
+                self.na_axes[0,0].imshow(self.na_IPROJ_fet, cmap=cm.gray, alpha=1.0)
+                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                self.na_axes[0,0].set_title("local")
+                self.na_axes[0,1].imshow(self.na_IPROJ_fet, cmap=cm.jet, alpha=1.0)
+                self.na_axes[0,1].set_title("local")
+
+            elif self.i_bgr_id == 1:
+                self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
+                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                self.na_axes[0,0].set_title("maximum")
+                self.na_axes[0,1].imshow(self.na_IPROJ_max, cmap=cm.jet, alpha=1.0)
+                self.na_axes[0,1].set_title("maximum")
+
+            elif self.i_bgr_id == 2:
+                self.na_axes[0,0].imshow(self.na_IPROJ_std, cmap=cm.gray, alpha=1.0)
+                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                self.na_axes[0,0].set_title("std")
+                self.na_axes[0,1].imshow(self.na_IPROJ_std, cmap=cm.jet, alpha=1.0)
+                self.na_axes[0,1].set_title("std")
+            else:
+                pass
+            self.oc_fig.canvas.draw_idle()
     #
 #
 
