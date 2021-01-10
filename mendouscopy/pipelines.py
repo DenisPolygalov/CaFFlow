@@ -60,11 +60,13 @@ def _check_file(s_fname, b_check_absence=False):
 
 def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwrite_output=False, i_max_nframes=None):
     s_roi_data_in_fname   = os.path.join(s_target_dir, s_out_fname_prefix + "roi_data.npy")
+    s_roi_fluo_in_fname   = os.path.join(s_target_dir, s_out_fname_prefix + "roi_fluo.tiff")
     s_roi_mask_in_fname   = os.path.join(s_target_dir, s_out_fname_prefix + "roi_mask.tiff")
     s_register_in_fname   = os.path.join(s_target_dir, s_out_fname_prefix + "register.tiff")
     s_fluo_data_out_fname = os.path.join(s_target_dir, s_out_fname_prefix + "fluo.npy")
 
     _check_file(s_roi_data_in_fname)
+    _check_file(s_roi_fluo_in_fname)
     _check_file(s_roi_mask_in_fname)
     _check_file(s_register_in_fname)
     if not b_overwrite_output: _check_file(s_fluo_data_out_fname, b_check_absence=True)
@@ -142,7 +144,7 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     # RE-create a multi-part movie object
     del oc_reg_movie
     oc_reg_movie = None
-    oc_reg_movie = CMuPaMovieTiff((s_register_in_fname,)) # notice the comma(!)
+    oc_reg_movie = CMuPaMovieTiff((s_roi_fluo_in_fname,)) # notice the comma(!)
 
     # object for intensity projections calculation
     oc_iproj = None

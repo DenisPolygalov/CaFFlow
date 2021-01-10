@@ -98,8 +98,9 @@ class CIntensityProjector(object):
         # Features (local) Intensity Projection
         if isinstance(self.na_featured_frame_ids, np.ndarray) and \
             self.i_fet_frame_idx < self.na_featured_frame_ids.size:
-            if self._i_nframes_proc == self.na_featured_frame_ids[self.i_fet_frame_idx]:
-                self.na_iproj_fet[...] += (na_input.astype(np.float64) / na_input.max())
+            f_max_val = na_input.max()
+            if self._i_nframes_proc == self.na_featured_frame_ids[self.i_fet_frame_idx] and f_max_val > 0:
+                self.na_iproj_fet[...] += (na_input.astype(np.float64) / f_max_val)
                 self.i_fet_frame_idx += 1
 
     def finalize_projection(self):
