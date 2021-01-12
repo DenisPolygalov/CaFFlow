@@ -5,6 +5,7 @@ import os
 import sys
 import cv2 as cv
 import numpy as np
+from scipy.stats import median_absolute_deviation
 
 from .mupamovie import CMuPaMovieCV
 from .mupamovie import CMuPaMovieZF
@@ -140,6 +141,14 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     print("Number of events detected: %i" % np.sum(na_dFF_evt_peaks))
     oc_roi_picker.d_FLUO['dFF_evt_peaks'] = na_dFF_evt_peaks
     oc_roi_picker.d_FLUO['dFF_evt_spans'] = na_dFF_evt_spans
+
+    # calculate SNR value for each dFF trace
+    _, i_nROIs = oc_roi_picker.d_FLUO['dFF'].shape
+    na_dFF_SNR = np.zeros(i_nROIs, dtype=np.float)
+    for ii in range(i_nROIs):
+        na_median_at_events = np.median( oc_roi_picker.d_FLUO['dFF'][np.where(na_dFF_evt_spans[:,ii])] )
+        na_dFF_SNR[ii] = na_median_at_events / median_absolute_deviation(oc_roi_picker.d_FLUO['dFF'][:,ii])
+    oc_roi_picker.d_FLUO['dFF_SNR'] = na_dFF_SNR
 
     # RE-create a multi-part movie object
     del oc_reg_movie
