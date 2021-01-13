@@ -119,7 +119,9 @@ class CSimpleDataViewer(object):
 
 
 class CPerROIDataViewer(object):
-    def __init__(self, d_fluo_data, event_peaks=None, event_spans=None):
+    def __init__(self, d_fluo_data, event_peaks=None, event_spans=None, snr_threshold=3):
+        self.f_snr_threshold = snr_threshold
+        self.b_draw_thr_rois = False
         self.f_rect_sz = 15
         self.f_rect_hsz = self.f_rect_sz/2
         self.oc_fig = plt.figure(figsize=(14,8))
@@ -134,6 +136,7 @@ class CPerROIDataViewer(object):
         self.na_IPROJ_std = d_fluo_data['IPROJ_std']
         self.na_ROI_mask = d_fluo_data['ROI_mask']
         self.na_dFF = d_fluo_data['dFF']
+        self.na_dFF_SNR = d_fluo_data['dFF_SNR']
         self.i_nframes, self.i_nROIs = self.na_dFF.shape
 
         self.i_bgr_id = 0 # current background image id
@@ -148,9 +151,10 @@ class CPerROIDataViewer(object):
             self.na_ROIxy[ii,0] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][0] - self.f_rect_hsz
             self.na_ROIxy[ii,1] = d_fluo_data['ROI_data'][ii]['ROI_CoidXY'][1] - self.f_rect_hsz
 
-        self.na_ROI_contours = np.zeros_like(self.na_ROI_mask)
+        self.na_ROI_contours = np.zeros_like(self.na_ROI_mask, dtype=self.na_ROI_mask.dtype)
         self.convert_ROI_mask2contours()
-        self.na_ROI_filled_mask = np.zeros_like(self.na_ROI_mask)
+        self.na_ROI_filled_mask = np.zeros_like(self.na_ROI_mask, dtype=self.na_ROI_mask.dtype)
+        self.na_ROI_thresh_mask = np.zeros_like(self.na_ROI_mask, dtype=self.na_ROI_mask.dtype)
         self.convert_ROI_mask2filled_mask()
 
         t_xy = (self.na_ROIxy[0,1], self.na_ROIxy[0,0])
@@ -216,6 +220,25 @@ class CPerROIDataViewer(object):
             i_ROI_CoM_x = int(self.na_ROIxy[i_roi_id,1] + self.f_rect_hsz)
             i_ROI_CoM_y = int(self.na_ROIxy[i_roi_id,0] + self.f_rect_hsz)
             self.na_ROI_filled_mask[i_ROI_CoM_y, i_ROI_CoM_x] = 2
+
+        na_over_thr_mask = self.na_ROI_mask.copy()
+        i_discarded_roi_cnt = 0
+        for ii in range(self.i_nROIs):
+            i_roi_id = ii + 1
+            if self.na_dFF_SNR[ii] <= self.f_snr_threshold:
+                print("Threshold ROI: id=%i SNR=%.4f (discarded)" % (i_roi_id, self.na_dFF_SNR[ii]))
+                na_over_thr_mask[na_over_thr_mask == (i_roi_id)] = 0
+                i_discarded_roi_cnt += 1
+            else:
+                print("Threshold ROI: id=%i SNR=%.4f" % (i_roi_id, self.na_dFF_SNR[ii]))
+        self.na_ROI_thresh_mask[na_over_thr_mask > 0] = 1
+        print("Discarded %i ROI out of %i" % (i_discarded_roi_cnt, self.i_nROIs))
+
+        for i_roi_id in range(self.i_nROIs):
+            if self.na_dFF_SNR[i_roi_id] <= self.f_snr_threshold: continue
+            i_ROI_CoM_x = int(self.na_ROIxy[i_roi_id,1] + self.f_rect_hsz)
+            i_ROI_CoM_y = int(self.na_ROIxy[i_roi_id,0] + self.f_rect_hsz)
+            self.na_ROI_thresh_mask[i_ROI_CoM_y, i_ROI_CoM_x] = 2
     #
     def select_ROI(self, i_ROI_idx):
         if i_ROI_idx < 0: return
@@ -262,6 +285,7 @@ class CPerROIDataViewer(object):
         self.select_ROI(i_idx)
         self.plot_dFF_trace(i_idx)
         self.oc_fig.canvas.draw_idle()
+        print("ROI: id=%i SNR=%.4f" % (i_idx+1, self.na_dFF_SNR[i_idx]))
     #
     def __cb_on_key_press(self, event):
         if event.key == 'b':
@@ -271,26 +295,62 @@ class CPerROIDataViewer(object):
 
             if self.i_bgr_id == 0:
                 self.na_axes[0,0].imshow(self.na_IPROJ_fet, cmap=cm.gray, alpha=1.0)
-                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                if self.b_draw_thr_rois:
+                    self.na_axes[0,0].imshow(self.na_ROI_thresh_mask, cmap=cm.coolwarm, alpha=0.5)
+                else:
+                    self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
                 self.na_axes[0,0].set_title("local")
                 self.na_axes[0,1].imshow(self.na_IPROJ_fet, cmap=cm.jet, alpha=1.0)
                 self.na_axes[0,1].set_title("local")
 
             elif self.i_bgr_id == 1:
                 self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
-                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                if self.b_draw_thr_rois:
+                    self.na_axes[0,0].imshow(self.na_ROI_thresh_mask, cmap=cm.coolwarm, alpha=0.5)
+                else:
+                    self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
                 self.na_axes[0,0].set_title("maximum")
                 self.na_axes[0,1].imshow(self.na_IPROJ_max, cmap=cm.jet, alpha=1.0)
                 self.na_axes[0,1].set_title("maximum")
 
             elif self.i_bgr_id == 2:
                 self.na_axes[0,0].imshow(self.na_IPROJ_std, cmap=cm.gray, alpha=1.0)
-                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                if self.b_draw_thr_rois:
+                    self.na_axes[0,0].imshow(self.na_ROI_thresh_mask, cmap=cm.coolwarm, alpha=0.5)
+                else:
+                    self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
                 self.na_axes[0,0].set_title("std")
                 self.na_axes[0,1].imshow(self.na_IPROJ_std, cmap=cm.jet, alpha=1.0)
                 self.na_axes[0,1].set_title("std")
             else:
                 pass
+            self.oc_fig.canvas.draw_idle()
+
+        if event.key == 't':
+            if self.b_draw_thr_rois:
+                self.b_draw_thr_rois = False
+                if self.i_bgr_id == 0:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_fet, cmap=cm.gray, alpha=1.0)
+                elif self.i_bgr_id == 1:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
+                elif self.i_bgr_id == 2:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_std, cmap=cm.gray, alpha=1.0)
+
+                self.na_axes[0,0].imshow(self.na_ROI_filled_mask, cmap=cm.coolwarm, alpha=0.5)
+                self.na_axes[0,0].set_aspect('equal', 'box')
+                self.na_axes[0,0].add_patch(self.oc_rect_l)
+            else:
+                self.b_draw_thr_rois = True
+                if self.i_bgr_id == 0:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_fet, cmap=cm.gray, alpha=1.0)
+                elif self.i_bgr_id == 1:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_max, cmap=cm.gray, alpha=1.0)
+                elif self.i_bgr_id == 2:
+                    self.na_axes[0,0].imshow(self.na_IPROJ_std, cmap=cm.gray, alpha=1.0)
+
+                self.na_axes[0,0].imshow(self.na_ROI_thresh_mask, cmap=cm.coolwarm, alpha=0.5)
+                self.na_axes[0,0].set_aspect('equal', 'box')
+                self.na_axes[0,0].add_patch(self.oc_rect_l)
             self.oc_fig.canvas.draw_idle()
     #
 #

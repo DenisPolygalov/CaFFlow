@@ -146,8 +146,10 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     _, i_nROIs = oc_roi_picker.d_FLUO['dFF'].shape
     na_dFF_SNR = np.zeros(i_nROIs, dtype=np.float)
     for ii in range(i_nROIs):
-        na_median_at_events = np.median( oc_roi_picker.d_FLUO['dFF'][np.where(na_dFF_evt_spans[:,ii])] )
-        na_dFF_SNR[ii] = na_median_at_events / median_absolute_deviation(oc_roi_picker.d_FLUO['dFF'][:,ii])
+        na_1trace = oc_roi_picker.d_FLUO['dFF'][:,ii]
+        na_1spans = na_dFF_evt_spans[:,ii]
+        na_median_at_events = np.median( na_1trace[np.where(na_1spans > 0)] )
+        na_dFF_SNR[ii] = na_median_at_events / median_absolute_deviation(na_1trace)
     oc_roi_picker.d_FLUO['dFF_SNR'] = na_dFF_SNR
 
     # RE-create a multi-part movie object
