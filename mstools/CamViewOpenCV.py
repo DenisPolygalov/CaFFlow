@@ -64,11 +64,14 @@ if __name__ == '__main__':
 
     i_camera_idx = 0
     d_param = {}
+    d_param['is_smart'] = False
     d_param['is_master'] = True
+    d_param['is_multihead'] = False
+    d_param['camera_index'] = i_camera_idx
 
     oc_main_win = CMainWindow(d_param, b_enable_close_button=True)
-    oc_frame_cap_thread = COpenCVframeCaptureThread(i_camera_idx, oc_main_win)
-    oc_main_win.start_preview(i_camera_idx, l_cameras[i_camera_idx], oc_frame_cap_thread)
+    oc_frame_cap_thread = COpenCVframeCaptureThread(d_param, oc_main_win)
+    oc_main_win.start_preview(l_cameras[i_camera_idx], oc_frame_cap_thread)
     oc_frame_cap_thread.start()
     oc_main_win.show()
     app.exec_()
