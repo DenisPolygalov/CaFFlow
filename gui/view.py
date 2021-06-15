@@ -120,6 +120,7 @@ class CSimpleDataViewer(object):
 
 class CPerROIDataViewer(object):
     def __init__(self, d_fluo_data, event_peaks=None, event_spans=None, snr_threshold=3):
+        (self.s_major_ver, self.s_minor_ver, self.s_subminor_ver) = (cv.__version__).split('.')
         self.f_snr_threshold = snr_threshold
         self.b_draw_thr_rois = False
         self.f_rect_sz = 15
@@ -209,7 +210,14 @@ class CPerROIDataViewer(object):
         na_canvas = np.zeros(self.na_ROI_mask.shape, dtype=np.uint8)
         for i_roi_id in range(i_nROIs):
             na_canvas[np.where(self.na_ROI_mask == (i_roi_id + 1))] = i_roi_id + 1
-            _, l_contours, _ = cv.findContours(na_canvas, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            if self.s_major_ver == '3':
+                _, l_contours, _ = cv.findContours(na_canvas, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            elif self.s_major_ver == '4':
+                l_contours, _ = cv.findContours(na_canvas, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+            else:
+                warnings.warn("Unexpected OpenCV version. Go ahead as with 4.x but things might become slippery...")
+                l_contours, _ = cv.findContours(na_canvas, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
             cv.drawContours(self.na_ROI_contours, l_contours, len(l_contours)-1, (1,0,0), 2)
             na_canvas.fill(0)
     #

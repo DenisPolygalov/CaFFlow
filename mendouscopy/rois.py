@@ -30,6 +30,7 @@ http://www.fsf.org/
 
 class CFrameWiseROIDetector(object):
     def __init__(self, i_frame_h, i_frame_w, frame_dtype, d_param):
+        (self.s_major_ver, self.s_minor_ver, self.s_subminor_ver) = (cv.__version__).split('.')
         # frames are counted starting from zero, each time when the process_frame() method called.
         self._i_frame_cnt = -1
         self._PROJ_NUM = 2501
@@ -113,7 +114,13 @@ class CFrameWiseROIDetector(object):
             _, na_thresh_frame = cv.threshold(na_frame_8U, i_thr_min, i_thr_max, 0)
 
             # get list of contours from the thresholded image
-            _, l_contours, _ = cv.findContours(na_thresh_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+            if self.s_major_ver == '3':
+                _, l_contours, _ = cv.findContours(na_thresh_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+            elif self.s_major_ver == '4':
+                l_contours, _ = cv.findContours(na_thresh_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+            else:
+                warnings.warn("Unexpected OpenCV version. Go ahead as with 4.x but things might become slippery...")
+                l_contours, _ = cv.findContours(na_thresh_frame, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
             b_new_ROI_found = False
             for na_contour in l_contours:
@@ -143,7 +150,13 @@ class CFrameWiseROIDetector(object):
         self.na_out[t_noise_pix_idxs] = 0
 
         # perform final ROI search by using the self._na_mask_8U as input
-        _, l_contours, _ = cv.findContours(self._na_mask_8U, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        if self.s_major_ver == '3':
+            _, l_contours, _ = cv.findContours(self._na_mask_8U, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        elif self.s_major_ver == '4':
+            l_contours, _ = cv.findContours(self._na_mask_8U, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        else:
+            warnings.warn("Unexpected OpenCV version. Go ahead as with 4.x but things might become slippery...")
+            l_contours, _ = cv.findContours(self._na_mask_8U, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
         for i_contid, _ in enumerate(l_contours):
             f_perimeter = cv.arcLength(l_contours[i_contid], True)
