@@ -42,13 +42,15 @@ class CIntensityProjector(object):
         self.na_iproj_max = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_idx_max = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
 
-        # self.na_iproj_min = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
-        # self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
+        self.na_iproj_min = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+        self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
 
         self.na_iproj_std_delta = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_iproj_std_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_iproj_std_M2 = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.i_ddof = 0
+
+        self.na_iproj_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
         if isinstance(features, np.ndarray):
             if features.ndim > 2 or features.ndim < 1:
@@ -63,8 +65,8 @@ class CIntensityProjector(object):
             elif features.ndim == 1:
                 self.na_featured_frame_ids = np.where(features > 0)[0]
 
-            else:
-                self.na_featured_frame_ids = None
+        else:
+            self.na_featured_frame_ids = None
         self.na_iproj_fet = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
     def process_frame(self, na_input, b_verbose=False):
@@ -84,8 +86,8 @@ class CIntensityProjector(object):
         self.na_iproj_max[self.na_idx_max] = na_input[self.na_idx_max]
 
         # Minimum Intensity Projection
-        # np.less(na_input, self.na_iproj_min, out=self.na_idx_min)
-        # self.na_iproj_min[self.na_idx_min] = na_input[self.na_idx_min]
+        np.less(na_input, self.na_iproj_min, out=self.na_idx_min)
+        self.na_iproj_min[self.na_idx_min] = na_input[self.na_idx_min]
 
         # Standard Deviation Intensity Projection
         # https://stackoverflow.com/questions/5543651/computing-standard-deviation-in-a-stream
@@ -94,6 +96,9 @@ class CIntensityProjector(object):
         self.na_iproj_std_delta = na_input - self.na_iproj_std_mean
         self.na_iproj_std_mean += self.na_iproj_std_delta / (self._i_nframes_proc + 1)
         self.na_iproj_std_M2 += self.na_iproj_std_delta * (na_input - self.na_iproj_std_mean)
+
+        # Mean Intensity Projection
+        self.na_iproj_mean[...] += (na_input.astype(np.float64))
 
         # Features (local) Intensity Projection
         if isinstance(self.na_featured_frame_ids, np.ndarray) and \
@@ -105,9 +110,12 @@ class CIntensityProjector(object):
 
     def finalize_projection(self):
         self.d_IPROJ['IPROJ_max'] = self.na_iproj_max
-        # self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
+        self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
         self.d_IPROJ['IPROJ_std'] = np.sqrt( self.na_iproj_std_M2 / (self._i_nframes_proc + 1 - self.i_ddof) )
-        self.d_IPROJ['IPROJ_fet'] = self.na_iproj_fet / self.i_fet_frame_idx
+        if isinstance(self.na_featured_frame_ids, np.ndarray):
+            self.na_iproj_fet /= self.i_fet_frame_idx
+        self.d_IPROJ['IPROJ_fet'] = self.na_iproj_fet
+        self.d_IPROJ['IPROJ_mean'] = self.na_iproj_mean / self._i_nframes_proc
         self._b_projection_finalized = True
     #
 #
