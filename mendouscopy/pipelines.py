@@ -148,6 +148,9 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     for ii in range(i_nROIs):
         na_1trace = oc_roi_picker.d_FLUO['dFF'][:,ii]
         na_1spans = na_dFF_evt_spans[:,ii]
+        # Leave SNR zero for dFF traces where no events were detected
+        if np.sum(na_1spans) == 0:
+            continue
         na_median_at_events = np.median( na_1trace[np.where(na_1spans > 0)] )
         na_dFF_SNR[ii] = na_median_at_events / median_absolute_deviation(na_1trace)
     oc_roi_picker.d_FLUO['dFF_SNR'] = na_dFF_SNR
@@ -155,7 +158,7 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
     # RE-create a multi-part movie object
     del oc_reg_movie
     oc_reg_movie = None
-    oc_reg_movie = CMuPaMovieTiff((s_roi_fluo_in_fname,)) # notice the comma(!)
+    oc_reg_movie = CMuPaMovieTiff((s_register_in_fname,)) # notice the comma(!)
 
     # object for intensity projections calculation
     oc_iproj = None

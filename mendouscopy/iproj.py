@@ -37,6 +37,7 @@ class CIntensityProjector(object):
         self.i_frame_h = i_frame_h
         self.i_frame_w = i_frame_w
         self.i_fet_frame_idx = 0
+        self.i_fet_frame_idx_accepted = 0
         self.d_IPROJ = {}
 
         self.na_iproj_max = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
@@ -53,8 +54,13 @@ class CIntensityProjector(object):
         self.na_iproj_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
         if isinstance(features, np.ndarray):
+            print("CIntensityProjector: features.shape:", features.shape)
+            print("CIntensityProjector: features.ndim:", features.ndim)
             if features.ndim > 2 or features.ndim < 1:
-                raise ValueError("Unsupported shape of the features array")
+                raise ValueError("Unsupported shape of the 'features' array!")
+            if features.ndim == 2:
+                if features.shape[0] == 1 or features.shape[1] == 1:
+                    raise ValueError("Unsupported shape of the 'features' array. Squeeze it in advance!")
 
             if features.ndim == 2 and features.shape[0] >= features.shape[1]:
                 self.na_featured_frame_ids = np.where(features.sum(axis=1) > 0)[0]
@@ -65,7 +71,11 @@ class CIntensityProjector(object):
             elif features.ndim == 1:
                 self.na_featured_frame_ids = np.where(features > 0)[0]
 
+            print("CIntensityProjector: na_featured_frame_ids.shape:", self.na_featured_frame_ids.shape)
+            print("CIntensityProjector: na_featured_frame_ids.size:", self.na_featured_frame_ids.size)
+
         else:
+            print("CIntensityProjector: the 'features' array is NOT provided!")
             self.na_featured_frame_ids = None
         self.na_iproj_fet = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
@@ -79,6 +89,8 @@ class CIntensityProjector(object):
         if na_input.shape[1] != self.i_frame_w:
             raise ValueError("Unexpected frame width")
 
+        # initial value of the self._i_nframes_proc is -1
+        # here we increment it and therefore indicate currently processed frame
         self._i_nframes_proc += 1
 
         # Maximum Intensity Projection
@@ -103,17 +115,28 @@ class CIntensityProjector(object):
         # Features (local) Intensity Projection
         if isinstance(self.na_featured_frame_ids, np.ndarray) and \
             self.i_fet_frame_idx < self.na_featured_frame_ids.size:
-            f_max_val = na_input.max()
-            if self._i_nframes_proc == self.na_featured_frame_ids[self.i_fet_frame_idx] and f_max_val > 0:
-                self.na_iproj_fet[...] += (na_input.astype(np.float64) / f_max_val)
+
+            if self._i_nframes_proc == self.na_featured_frame_ids[self.i_fet_frame_idx]:
+                f_max_val = na_input.max()
+                if f_max_val >= 1:
+                    self.na_iproj_fet[...] += (na_input.astype(np.float64) / f_max_val)
+                    self.i_fet_frame_idx_accepted += 1
                 self.i_fet_frame_idx += 1
+
+                if b_verbose:
+                    if f_max_val >= 1:
+                        print("CIntensityProjector: frame: %i max_val: %.2f (ACCEPTED)" % (self._i_nframes_proc, f_max_val))
+                    else:
+                        print("CIntensityProjector: frame: %i max_val: %.2f (rejected)" % (self._i_nframes_proc, f_max_val))
 
     def finalize_projection(self):
         self.d_IPROJ['IPROJ_max'] = self.na_iproj_max
         self.d_IPROJ['IPROJ_min'] = self.na_iproj_min
         self.d_IPROJ['IPROJ_std'] = np.sqrt( self.na_iproj_std_M2 / (self._i_nframes_proc + 1 - self.i_ddof) )
         if isinstance(self.na_featured_frame_ids, np.ndarray):
-            self.na_iproj_fet /= self.i_fet_frame_idx
+            print("CIntensityProjector: number of frames accepted:", self.i_fet_frame_idx_accepted)
+            print("CIntensityProjector: number of frames rejected:", self.i_fet_frame_idx - self.i_fet_frame_idx_accepted)
+            self.na_iproj_fet /= self.i_fet_frame_idx_accepted
         self.d_IPROJ['IPROJ_fet'] = self.na_iproj_fet
         self.d_IPROJ['IPROJ_mean'] = self.na_iproj_mean / self._i_nframes_proc
         self._b_projection_finalized = True
