@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+import warnings
 from collections import deque
 import cv2 as cv
 import numpy as np
@@ -381,15 +382,24 @@ class CFrameRegECC(object):
 
         else:
             self.na_wM_dummy[...] = self.na_wM_eye[...]
-            f_cc, self.na_wM[...] = cv.findTransformECC(
-                self.na_out,
-                self.na_ecc_in,
-                self.na_wM_dummy,
-                self.i_warp_mode,
-                self.t_criteria
-            )
+            b_findTransformECC_failed = False
+            try:
+                f_cc, self.na_wM[...] = cv.findTransformECC(
+                    self.na_out,
+                    self.na_ecc_in,
+                    self.na_wM_dummy,
+                    self.i_warp_mode,
+                    self.t_criteria
+                )
+            except cv.error:
+                warnings.warn("findTransformECC() failed to converge at frame %d" % self.i_frame_id)
+                b_findTransformECC_failed = True
 
-            self.d_REG['REG_warp_flag'].append(1)
+            if b_findTransformECC_failed:
+                self.d_REG['REG_warp_flag'].append(0)
+            else:
+                self.d_REG['REG_warp_flag'].append(1)
+
             self.d_REG['REG_corr_coef'].append(f_cc)
 
             # calculate euclidean distance between las column of the self.na_wM (2x3) matrix
