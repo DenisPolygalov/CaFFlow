@@ -397,10 +397,10 @@ class CFrameRegECC(object):
 
             if b_findTransformECC_failed:
                 self.d_REG['REG_warp_flag'].append(0)
+                self.d_REG['REG_corr_coef'].append(np.nan)
             else:
                 self.d_REG['REG_warp_flag'].append(1)
-
-            self.d_REG['REG_corr_coef'].append(f_cc)
+                self.d_REG['REG_corr_coef'].append(f_cc)
 
             # calculate euclidean distance between las column of the self.na_wM (2x3) matrix
             # and last column of the last (newest) entry of the self.d_REG['REG_warp_matrix']
