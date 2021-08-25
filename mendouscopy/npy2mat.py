@@ -83,7 +83,7 @@ def npy2mat(s_input_dir, b_overwrite_output=True):
         l_file_list = glob.glob(os.path.join(s_input_dir, s_file_wcard))
         for s_input_file in l_file_list:
             s_output_file = os.path.splitext(s_input_file)[0] + ".mat"
-            if not b_overwrite_output:
+            if os.path.isfile(s_output_file) and not b_overwrite_output:
                 print("WARNING: skip existing output file")
                 continue
             process_npy_file(s_input_file, s_output_file)
