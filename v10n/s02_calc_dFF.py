@@ -51,6 +51,7 @@ if __name__ == '__main__':
     sys.path.append(s_base_dir)
     from mendouscopy.pipelines import register_frames_detect_rois
     from mendouscopy.pipelines import pickup_rois_extract_fluo
+    from mendouscopy.npy2mat import npy2mat
 
     i_target_section = None
     # i_target_section = 0 # use this to process single section only
@@ -112,6 +113,7 @@ if __name__ == '__main__':
             s_out_file_prefix,
             b_overwrite_output=True
         )
+        npy2mat(s_input_dir)
 #
 
 
