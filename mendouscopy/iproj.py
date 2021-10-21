@@ -5,7 +5,7 @@ import numpy as np
 
 
 """
-Copyright (C) 2020 Denis Polygalov,
+Copyright (C) 2020-2021 Denis Polygalov,
 Laboratory for Circuit and Behavioral Physiology,
 RIKEN Center for Brain Science, Saitama, Japan.
 
@@ -143,3 +143,82 @@ class CIntensityProjector(object):
     #
 #
 
+
+class CROISpecificIntensityProjector(object):
+    """Process each incoming frame and update internal data.
+    At the end of the movie after calling the finalize_projection() method
+    calculate various types of intensity projections.
+    As distinct of CIntensityProjector this class require fluorescence
+    data to be provided at the moment of object creation and calculate
+    ROI-specific intensity projections based on ROI positions and dF/F
+    traces detected in advance.
+    """
+    def __init__(self, i_frame_h, i_frame_w, d_FLUO):
+        # frames are counted starting from zero, each time when the process_frame() method called.
+        self._i_nframes_proc = -1
+        self._b_projection_finalized = False
+        self.i_frame_h = i_frame_h
+        self.i_frame_w = i_frame_w
+        self.d_ROI_fimi = {} # {frame_id : [mask_id, mask_id, ...]}
+        self.d_IPROJ = {}
+
+        self.l_ROI_data = d_FLUO['ROI_data']
+        self.i_nframes, self.i_nROIs = d_FLUO['dFF'].shape
+        assert(self.i_nROIs == len(self.l_ROI_data))
+
+        for i_roi_id in range(self.i_nROIs):
+            s_frame_id = str(self.l_ROI_data[i_roi_id]['frame_id'])
+            i_mask_id = self.l_ROI_data[i_roi_id]['mask_id']
+
+            if s_frame_id not in self.d_ROI_fimi:
+                self.d_ROI_fimi[s_frame_id] = []
+                self.d_ROI_fimi[s_frame_id].append(i_mask_id)
+            else:
+                self.d_ROI_fimi[s_frame_id].append(i_mask_id)
+
+        self.na_ROI_mask = d_FLUO['ROI_mask']
+        self.na_canvas = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+
+        self.na_ROI_fluo_raw  = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+        self.na_ROI_fluo_norm = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+
+    def process_frame(self, na_input, b_verbose=False):
+        if self._b_projection_finalized:
+            raise ValueError("Inappropriate method calling sequence. This object cannot be reused after finalization!")
+        if len(na_input.shape) != 2:
+            raise ValueError("Unexpected frame shape")
+        if na_input.shape[0] != self.i_frame_h:
+            raise ValueError("Unexpected frame height")
+        if na_input.shape[1] != self.i_frame_w:
+            raise ValueError("Unexpected frame width")
+
+        # initial value of the self._i_nframes_proc is -1
+        # here we increment it and therefore indicate currently processed frame
+        self._i_nframes_proc += 1
+
+        s_frame_id = str(self._i_nframes_proc)
+
+        if s_frame_id in self.d_ROI_fimi:
+            assert(len(self.d_ROI_fimi[s_frame_id]) != 0)
+            if b_verbose:
+                print("CROISpecificIntensityProjector: ", s_frame_id, d_ROI_fimi[s_frame_id])
+
+            for i_mask_id in self.d_ROI_fimi[s_frame_id]:
+                IDX = np.where(self.na_ROI_mask == i_mask_id)
+                self.na_ROI_fluo_raw[IDX] += na_input[IDX]
+
+                self.na_canvas.fill(0)
+                self.na_canvas[IDX] = na_input[IDX]
+                f_max = np.max(self.na_canvas)
+                assert(f_max != 0)
+                self.na_canvas /= f_max
+                self.na_ROI_fluo_norm[...] += self.na_canvas[...]
+
+    def finalize_projection(self):
+        self.na_ROI_fluo_raw[self.na_ROI_fluo_raw   == 0.0] = np.nan
+        self.na_ROI_fluo_norm[self.na_ROI_fluo_norm == 0.0] = np.nan
+        self.d_IPROJ['IPROJ_ROI_fluo_raw'] = self.na_ROI_fluo_raw
+        self.d_IPROJ['IPROJ_ROI_fluo_norm'] = self.na_ROI_fluo_norm
+        self._b_projection_finalized = True
+    #
+#
