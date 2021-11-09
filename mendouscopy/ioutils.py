@@ -76,7 +76,14 @@ def enum_video_files_dir(target_source, s_wildcard, i_num_pos=-1, b_verbose=Fals
             raise ValueError("Missing files (holes in numbering) found in: %s" % target_source)
 
     # another method
-    if max(l_sorted_file_numbers) != len(l_sorted_file_names):
+    if min(l_sorted_file_numbers) == 0:
+        i_nfiles = max(l_sorted_file_numbers) + 1
+    elif min(l_sorted_file_numbers) == 1:
+        i_nfiles = max(l_sorted_file_numbers)
+    else:
+        raise ValueError("Unsupported file numbering method")
+
+    if i_nfiles != len(l_sorted_file_names):
         raise ValueError("Missing files (length mismatch) found in: %s" % target_source)
 
     if b_verbose:
