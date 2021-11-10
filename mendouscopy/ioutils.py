@@ -3,14 +3,16 @@
 
 import os
 import re
+import csv
 import glob
 import posixpath
 import json
 from json.decoder import JSONDecodeError
+import numpy as np
 
 
 """
-Copyright (C) 2018 Denis Polygalov,
+Copyright (C) 2018-2021 Denis Polygalov,
 Laboratory for Circuit and Behavioral Physiology,
 RIKEN Center for Brain Science, Saitama, Japan.
 
@@ -157,6 +159,47 @@ def load_Miniscope_json(s_fname: str) -> dict:
         print("ERROR: loaded JSON object is of wrong type: %s" % s_fname)
         raise
     return d_json
+#
+
+def load_Miniscope_timeStamps(s_fname: str, b_verbose=False) -> dict:
+    if not os.path.isfile(s_fname):
+        raise IOError("Input file is not accessible: %s" % s_fname)
+
+    l_frame_num = []
+    l_ts_msec = []
+    l_buf_idx = []
+
+    with open(s_fname, 'r') as h_file:
+        oc_csv_reader = csv.reader(h_file)
+        for i_idx, l_row in enumerate(oc_csv_reader):
+            if i_idx == 0:
+                if len(l_row) != 3:
+                    raise ValueError("Unsupported file format (expected 3 columns)")
+                if l_row[0] != 'Frame Number':
+                    raise ValueError("Unsupported file format (first column header)")
+                if l_row[1] != 'Time Stamp (ms)':
+                    raise ValueError("Unsupported file format (second column header)")
+                if l_row[2] != 'Buffer Index':
+                    raise ValueError("Unsupported file format (third column header)")
+                continue
+            l_frame_num.append(int(l_row[0]))
+            l_ts_msec.append(int(l_row[1]))
+            l_buf_idx.append(int(l_row[2]))
+
+    d_out = dict()
+    d_out['frame_number'] = np.array(l_frame_num)
+    d_out['time_stamp_ms'] = np.array(l_ts_msec)
+    d_out['buffer_index'] = np.array(l_buf_idx)
+
+    if b_verbose:
+        print("load_Miniscope_timeStamps: %s" % s_fname)
+        for s_key, na_val in d_out.items():
+            print("load_Miniscope_timeStamps: %s shape=%s\tjitter: %i ~ %i" % (s_key, na_val.shape, \
+                np.min(np.diff(na_val)), \
+                np.max(np.diff(na_val)) \
+                )
+            )
+    return d_out
 #
 
 def load_Miniscope_session(s_rec_ses_dir: str, rec_ses_version=4, b_verbose=False) -> dict:
