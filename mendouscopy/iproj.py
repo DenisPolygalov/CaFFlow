@@ -160,6 +160,7 @@ class CROISpecificIntensityProjector(object):
         self.i_frame_h = i_frame_h
         self.i_frame_w = i_frame_w
         self.d_ROI_fimi = {} # {frame_id : [mask_id, mask_id, ...]}
+        self.d_ROI_fimi_max = {} # {frame_id : [mask_id, mask_id, ...]}
         self.d_IPROJ = {}
 
         self.l_ROI_data = d_FLUO['ROI_data']
@@ -176,11 +177,21 @@ class CROISpecificIntensityProjector(object):
             else:
                 self.d_ROI_fimi[s_frame_id].append(i_mask_id)
 
+            na_dFF_roi = d_FLUO['dFF'][:,i_roi_id]
+            s_frame_id_at_max_fluo = str(np.argmax(na_dFF_roi))
+
+            if s_frame_id_at_max_fluo not in self.d_ROI_fimi_max:
+                self.d_ROI_fimi_max[s_frame_id_at_max_fluo] = []
+                self.d_ROI_fimi_max[s_frame_id_at_max_fluo].append(i_mask_id)
+            else:
+                self.d_ROI_fimi_max[s_frame_id_at_max_fluo].append(i_mask_id)
+
         self.na_ROI_mask = d_FLUO['ROI_mask']
         self.na_canvas = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
         self.na_ROI_fluo_raw  = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_ROI_fluo_norm = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
+        self.na_ROI_fluo_max  = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
 
     def process_frame(self, na_input, b_verbose=False):
         if self._b_projection_finalized:
@@ -214,11 +225,18 @@ class CROISpecificIntensityProjector(object):
                 self.na_canvas /= f_max
                 self.na_ROI_fluo_norm[...] += self.na_canvas[...]
 
+        if s_frame_id in self.d_ROI_fimi_max:
+            for i_mask_id in self.d_ROI_fimi_max[s_frame_id]:
+                IDX = np.where(self.na_ROI_mask == i_mask_id)
+                self.na_ROI_fluo_max[IDX] += na_input[IDX]
+
     def finalize_projection(self):
         self.na_ROI_fluo_raw[self.na_ROI_fluo_raw   == 0.0] = np.nan
         self.na_ROI_fluo_norm[self.na_ROI_fluo_norm == 0.0] = np.nan
+        self.na_ROI_fluo_max[self.na_ROI_fluo_max   == 0.0] = np.nan
         self.d_IPROJ['IPROJ_ROI_fluo_raw'] = self.na_ROI_fluo_raw
         self.d_IPROJ['IPROJ_ROI_fluo_norm'] = self.na_ROI_fluo_norm
+        self.d_IPROJ['IPROJ_ROI_fluo_max'] = self.na_ROI_fluo_max
         self._b_projection_finalized = True
     #
 #
