@@ -72,7 +72,7 @@ def plot_result(s_input_dir, s_input_ini_file, s_fname_prefix):
 
     oc_cmap = plt.cm.jet.copy()
     oc_cmap.set_bad(color='black')
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(14,5))
+    _, ax = plt.subplots(nrows=1, ncols=3, figsize=(14,5))
     ax[0].imshow(oc_iproj.d_IPROJ['IPROJ_ROI_fluo_raw'],  cmap=oc_cmap)
     ax[1].imshow(oc_iproj.d_IPROJ['IPROJ_ROI_fluo_max'],  cmap=oc_cmap)
     ax[2].imshow(oc_iproj.d_IPROJ['IPROJ_ROI_fluo_norm'], cmap=oc_cmap)
@@ -91,9 +91,7 @@ if __name__ == '__main__':
     s_base_dir, _ = os.path.split(os.getcwd())
     sys.path.append(s_base_dir)
     from mendouscopy.debug import DVAR
-    from gui.view import CPerROIDataViewer
     from mendouscopy.mupamovie import CMuPaMovieTiff
-    from mendouscopy.iproj import CIntensityProjector
     from mendouscopy.iproj import CROISpecificIntensityProjector
 
     i_target_section = None
