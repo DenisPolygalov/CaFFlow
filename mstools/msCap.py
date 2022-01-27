@@ -50,6 +50,10 @@ class CMainWindow(QtWidgets.QWidget):
         self.f_initial_frame_rate = float(self.oc_global_cfg['general']['initial_frame_rate'])
         self.i_initial_frame_width = int(self.oc_global_cfg['general']['initial_frame_width'])
         self.i_initial_frame_height = int(self.oc_global_cfg['general']['initial_frame_height'])
+        if 'nframes_per_file' in self.oc_global_cfg['general']:
+            self.i_nframes_per_file = int(self.oc_global_cfg['general']['nframes_per_file'])
+        else:
+            self.i_nframes_per_file = 1000
 
         self.oc_frame_cap_thread = None
         self.l_wins = []
@@ -293,7 +297,7 @@ class CMainWindow(QtWidgets.QWidget):
                 repr(d_vstream_info['FPS']) \
             ))
             # TODO:
-            # The 'initial_frame_width' and 'initial_frame_height' paramers in mstools.ini
+            # The 'initial_frame_width' and 'initial_frame_height' parameters in mstools.ini
             # has to be tailored to specific video source type because for
             # example Miniscope does not support frame size changing.
             # Currently these values has to be the same for all 'smart' video sources.
@@ -322,6 +326,7 @@ class CMainWindow(QtWidgets.QWidget):
 
         d_rec_info = {}
         d_rec_info['DATA_ROOT_DIR'] = self.s_data_root_dir
+        d_rec_info['NFRAMES_PER_FILE'] = self.i_nframes_per_file
         d_rec_info['VSTREAM_LIST'] = l_vstream_list
 
         self.oc_frame_writer.start_recording(d_rec_info)
@@ -385,7 +390,10 @@ if __name__ == '__main__':
     if os.path.isdir(s_qt_plugin_path):
         os.environ['QT_PLUGIN_PATH'] = s_qt_plugin_path
 
-    s_config_fname = "mstools.ini" # TODO hard-coded for now.
+    if len(sys.argv) > 1:
+        s_config_fname = sys.argv[1]
+    else:
+        s_config_fname = "mstools.ini"
     if not os.path.isfile(s_config_fname):
         raise OSError("Not a regular file: %s" % s_config_fname)
     if not os.access(s_config_fname, os.R_OK):

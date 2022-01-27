@@ -179,7 +179,8 @@ class CMuStreamVideoWriter(object):
             l_vstream_list[i_idx_master]['OUTPUT_FILE_PREFIX'],
             l_vstream_list[i_idx_master]['FPS'],
             l_vstream_list[i_idx_master]['FRAME_WIDTH'],
-            l_vstream_list[i_idx_master]['FRAME_HEIGHT']
+            l_vstream_list[i_idx_master]['FRAME_HEIGHT'],
+            i_nframes_per_file=d_rec_info['NFRAMES_PER_FILE']
         )
 
         for i_idx, b_do_cap in enumerate(self.t_do_capture):
@@ -193,6 +194,7 @@ class CMuStreamVideoWriter(object):
                     l_vstream_list[i_idx]['FPS'],
                     l_vstream_list[i_idx]['FRAME_WIDTH'],
                     l_vstream_list[i_idx]['FRAME_HEIGHT'],
+                    i_nframes_per_file=d_rec_info['NFRAMES_PER_FILE'],
                     master=oc_master_writer
                 )
 
