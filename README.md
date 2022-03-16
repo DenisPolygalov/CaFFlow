@@ -78,9 +78,6 @@ Change directory `(cd)` to the place where you plan to keep CaFFlow and clone th
 `$ git clone https://github.com/DenisPolygalov/CaFFlow.git`
 
 Download and install [Miniconda](https://docs.conda.io/en/latest/miniconda.html) if you don't have it installed already.
-**Please choose Python 3.8 version of Miniconda for the installation.**
-Note that if you plan to use GUI-based (PyQt) applications included into CaFFlow then it might be better to choose
-32-bit version of Miniconda for the installation due to a bug in 64-bit version preventing import of PyQt.QtMultimedia module.
 
 #### CaFFlow installation
 
