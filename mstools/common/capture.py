@@ -130,6 +130,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         self.l_retr_status = []
         self.MAX_FRAME_DROPS = 100
         self.FRAME_READ_DELAY_uS = 100000
+        self.t_vstream_list = tuple()
 
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
@@ -239,6 +240,11 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
             self.frameReady.emit('frameReady') # argument doesn't matter
 
         print("DEBUG: COpenCVmultiFrameCapThread: THREAD STOPPED!")
+        for i_idx, d_vstream_info in enumerate(self.t_vstream_list):
+            if d_vstream_info is not None and d_vstream_info['DESCRIPTION'] == 'MINISCOPE':
+                print("DEBUG: COpenCVmultiFrameCapThread.run(): cam_idx=%i" % i_idx)
+                self.update_prop_sync(i_idx, cv.CAP_PROP_SATURATION, 0x02) # RECORD_END command
+
         # Both - 'Preview' and 'Recording' states are done here.
         # All preview windows will be destroyed and all video writers must be
         # closed right after an instance of this class is done it's work.
@@ -281,13 +287,20 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         if len(l_vstream_list) != len(self.l_cams):
             raise RuntimeError("Sanity check failed. This should never happen.")
 
+        self.t_vstream_list = tuple(l_vstream_list)
+
         i_idx_master = -1
-        for i_idx, d_vstream_info in enumerate(l_vstream_list):
+        for i_idx, d_vstream_info in enumerate(self.t_vstream_list):
             if d_vstream_info is not None and d_vstream_info['IS_MASTER'] == 1:
                 i_idx_master = i_idx
                 break
         if i_idx_master == -1:
             raise RuntimeError("Sanity check failed. This should never happen.")
+
+        for i_idx, d_vstream_info in enumerate(self.t_vstream_list):
+            if d_vstream_info is not None and d_vstream_info['DESCRIPTION'] == 'MINISCOPE':
+                print("DEBUG: COpenCVmultiFrameCapThread.start_recording(): cam_idx=%i" % i_idx)
+                self.update_prop_sync(i_idx, cv.CAP_PROP_SATURATION, 0x01) # RECORD_START command
 
         self.b_recording = True
     #

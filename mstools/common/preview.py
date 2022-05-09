@@ -621,9 +621,6 @@ class CMiniScopePreviewWindow(COpenCVPreviewWindow):
         self.f_initial_frame_rate = d_param['initial_frame_rate'] # in Hz
 
         self._DEVICE_ID = 0x12
-        self._RECORD_START = 0x01
-        self._RECORD_END = 0x02
-        self._TRIG_RECORD_EXT = 0x02
         self._SET_CMOS_SETTINGS = 0x03
         self.t_frate_names = ("5 Hz", "10 Hz", "15 Hz", "20 Hz", "30 Hz", "60 Hz")
         self.t_frate_values = (0x11, 0x12, 0x13, 0x14, 0x15, 0x16)
