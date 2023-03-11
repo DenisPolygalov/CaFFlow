@@ -167,7 +167,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
 
                 self.l_frames.append(na_frame.copy())
                 self.l_frame_hwc.append((na_frame.shape[0], na_frame.shape[1], na_frame.shape[2]))
-                self.l_ts.append(0.0)
+                self.l_ts.append(time.time_ns()//1000)
                 self.l_grab_status.append(b_status)
                 self.l_retr_status.append(b_status)
 
@@ -201,7 +201,7 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
                 if b_do_cap:
                     self.l_retr_status[i_cam_idx], tmp_image = self.l_cams[i_cam_idx].retrieve()
                     if self.l_retr_status[i_cam_idx]:
-                        self.l_ts[i_cam_idx] = time.perf_counter()
+                        self.l_ts[i_cam_idx] = time.time_ns()//1000
                         self.l_frames[i_cam_idx][...] = tmp_image[...]
 
             # check for grab() and/or retrieve() failures

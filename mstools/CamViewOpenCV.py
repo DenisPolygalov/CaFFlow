@@ -37,10 +37,10 @@ class CMainWindow(COpenCVPreviewWindow):
     def __init__(self, d_param, *args, **kwargs):
         super(CMainWindow, self).__init__(d_param, *args, **kwargs)
         self.i_frame_id = -1
-        self.f_ts_prev = time.perf_counter()
+        self.f_ts_prev = float(time.time_ns()//1000)
 
     def frameReady(self, na_frame):
-        f_ts_curr = time.perf_counter()
+        f_ts_curr = float(time.time_ns()//1000)
         s_FPS = "%.1f" % (1.0/(f_ts_curr - self.f_ts_prev))
         self.f_ts_prev = f_ts_curr
         self.update()
