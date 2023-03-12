@@ -100,9 +100,9 @@ class CMuPaMovieCV(CMuPaMovie):
             self.df_info.loc[idx, 'file_name'] = self.t_file_names[idx]
 
             i_read_try_cnt = 0
-            hCap = cv.VideoCapture(self.t_file_names[idx])
+            hCap = self._get_video_capture(self.t_file_names[idx])
             while not hCap.isOpened():
-                hCap = cv.VideoCapture(self.t_file_names[idx])
+                hCap = self._get_video_capture(self.t_file_names[idx])
                 cv.waitKey(1000)
                 # print("WARNING: waiting for the cv.VideoCapture()...")
                 i_read_try_cnt += 1
@@ -144,6 +144,12 @@ class CMuPaMovieCV(CMuPaMovie):
 
         if b_verbose:
             print(self.df_info)
+
+    def _get_video_capture(self, s_file_name):
+        if cv.__version__.startswith('3'):
+            return cv.VideoCapture(0 + cv.CAP_DSHOW)
+        else:
+            return cv.VideoCapture(0, apiPreference=cv.CAP_MSMF)
 
     def _seek_rel(self, file_idx, frame_num):
         b_ret = False

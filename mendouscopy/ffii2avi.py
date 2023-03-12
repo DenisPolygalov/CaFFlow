@@ -75,6 +75,9 @@ def usage():
 
 
 if __name__ == "__main__":
+    if not cv.__version__.startswith('3'):
+        print("ERROR: this script can only work with OpenCV 3.x. You have: %s" % cv.__version__)
+        sys.exit(-1)
     if len(sys.argv) == 3:
         s_fps = sys.argv[1]
         s_fname_in = sys.argv[2]

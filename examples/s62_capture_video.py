@@ -29,11 +29,10 @@ http://www.fsf.org/
 """
 *ABOUT THIS FILE*
 
-Records a video from computer camera (which is flipped upside down)
-and is compressed by FFV1 (lossless).
+Records a video from computer camera (which is flipped upside down).
 
 Note: please check that it is compressed in this way by checking
-on the video file made called captured_lossless_video.avi which will
+on the video file made called captured_video.avi which will
 be created in the 'examples' folder.
 """
 
@@ -41,8 +40,16 @@ be created in the 'examples' folder.
 def main():
     f_fps_desired = 20.0
     i_nframes_max = 200
-    s_fname_out = 'captured_lossless_video.avi'
-    oc_vcap = cv.VideoCapture(0)
+    if cv.__version__.startswith('3'):
+        s_fname_out = 'captured_video.avi'
+        oc_fourcc = cv.VideoWriter_fourcc(*'FFV1')
+        oc_vcap = cv.VideoCapture(0 + cv.CAP_DSHOW)
+    elif cv.__version__.startswith('4'):
+        s_fname_out = 'captured_video.mp4'
+        oc_fourcc = cv.VideoWriter_fourcc(*'av01')
+        oc_vcap = cv.VideoCapture(0, apiPreference=cv.CAP_MSMF)
+    else:
+        raise NotImplementedError("this has to be checked carefully")
 
     f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
     i_frame_w = int(oc_vcap.get(cv.CAP_PROP_FRAME_WIDTH))
@@ -62,10 +69,13 @@ def main():
             print("Enforcing FPS filed! Try anyway...")
             f_fps = f_fps_desired
 
-    # writes video into file by FFV1
-    oc_fourcc = cv.VideoWriter_fourcc(*'FFV1')
-    oc_video_writer = cv.VideoWriter(s_fname_out, oc_fourcc, f_fps, (i_frame_w, i_frame_h))
-    print("If you see 'FFMPEG tag ... is not found' error message ABOVE, then your OS is missing FFMPEG encoding support.")
+    # writes video into file
+    if cv.__version__.startswith('3'):
+        oc_video_writer = cv.VideoWriter(s_fname_out, oc_fourcc, f_fps, (i_frame_w, i_frame_h))
+    elif cv.__version__.startswith('4'):
+        oc_video_writer = cv.VideoWriter(s_fname_out, apiPreference=cv.CAP_MSMF, fourcc=oc_fourcc, fps=f_fps, frameSize=(i_frame_w, i_frame_h))
+    else:
+        raise NotImplementedError("this has to be checked carefully")
 
     i_frame_cnt = 0
     while(oc_vcap.isOpened()):
@@ -105,7 +115,13 @@ def main():
         sys.exit(-1)
 
     print("Trying to open the output file by using OpenCV and read it back...")
-    oc_video_reader = cv.VideoCapture(s_fname_out)
+    if cv.__version__.startswith('3'):
+        oc_video_reader = cv.VideoCapture(s_fname_out)
+    elif cv.__version__.startswith('4'):
+        oc_video_reader = cv.VideoCapture(s_fname_out, apiPreference=cv.CAP_MSMF)
+    else:
+        raise NotImplementedError("this has to be checked carefully")
+
     if not oc_video_reader.isOpened():
         print("ERROR: unable to open file!")
         sys.exit(-1)

@@ -111,13 +111,7 @@ For GUI-based applications and video capturing software - please install PyQt an
 
 `(cafflow)> conda install pyqt matplotlib`
 
-For video encoding/decoding support the lossless video codec (FFV1)
-must be installed and registered globally, at your operating system level
-(i.e. as a COM DLL in the case of Windows). FFV1 video __encoding__ is supported by
-OpenCV distributed via the `conda` installer. FFV1 video __decoding__ support
-might be already available on your PC (installed for example by a third-party
-application) so it is necessary to check it's presence.
-In order to do so run the `examples/sXX_capture_video.py` script:
+Check video encoding/decoding support by running the `examples/sXX_capture_video.py` script:
 
 `(cafflow)> cd CaFFlow\examples`
 
@@ -125,18 +119,10 @@ In order to do so run the `examples/sXX_capture_video.py` script:
 
 and examine it's output. The script will try to capture a chunk of video
 stream from default video camera (must be connected in advance obviously),
-encode the video by using FFV1 codec provided by OpenCV and write encoded video
-into a file called _'captured_lossless_video.avi'_ located in the same directory.
-If the file was created, have non-zero size and you can play it's content
-by using common video-player software then you have FFV1 decoding support already installed.
-If the file is broken or not created at all you can try to install 
-[LAV Filters](https://github.com/Nevcairiel/LAVFilters) - 
-Open-Source DirectShow Media Splitter and Decoders binary package
-for Windows __**__
-from [here](https://github.com/Nevcairiel/LAVFilters/releases)
-, then restart your PC and repeat the test.
-
-__**__ Installing FFV1 video encoding/decoding support for other OSes is outside of the scope of this project.
+encode the video by using whatever codec provided by OpenCV and write encoded video
+into a file called _'captured_video.[avi|mp4]'_ located in the same directory.
+Check if the file was created, and you can play it by using VLC Media Player
+software for example.
 
 The next step is to test your Python environment:
 

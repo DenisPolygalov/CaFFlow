@@ -38,7 +38,10 @@ class COpenCVframeCaptureThread(QtCore.QThread):
         QtCore.QThread.__init__(self, *args, **kwargs)
         self.i_camera_idx = d_param['camera_index']
         self.b_running = False
-        self.oc_camera = cv.VideoCapture(self.i_camera_idx + cv.CAP_DSHOW)
+        if cv.__version__.startswith('3'):
+            self.oc_camera = cv.VideoCapture(self.i_camera_idx + cv.CAP_DSHOW)
+        else:
+            self.oc_camera = cv.VideoCapture(self.i_camera_idx, apiPreference=cv.CAP_MSMF)
         self.i_frame_id = -1 # so valid frame numbers will start from zero
         self.i_frame_drop_cnt = 0
         self.MAX_FRAME_DROPS = 100
@@ -135,7 +138,10 @@ class COpenCVmultiFrameCapThread(QtCore.QThread):
         for i_cam_idx, b_do_cap in enumerate(self.t_do_capture):
             if b_do_cap:
                 print("DEBUG: COpenCVmultiFrameCapThread(): cam_idx=%i" % i_cam_idx)
-                self.l_cams.append(cv.VideoCapture(i_cam_idx + cv.CAP_DSHOW))
+                if cv.__version__.startswith('3'):
+                    self.l_cams.append(cv.VideoCapture(i_cam_idx + cv.CAP_DSHOW))
+                else:
+                    self.l_cams.append(cv.VideoCapture(i_cam_idx, apiPreference=cv.CAP_MSMF))
             else:
                 print("DEBUG: COpenCVmultiFrameCapThread(): cam_idx=%i [SKIP]" % i_cam_idx)
                 self.l_cams.append(None) # *** WATCH OUT ***

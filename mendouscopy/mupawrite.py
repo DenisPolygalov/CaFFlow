@@ -40,8 +40,6 @@ class CMuPaVideoWriter(object):
         self.i_frame_h = int(i_frame_h)
         self.i_nframes_per_file = i_nframes_per_file
         self.oc_master_writer = master
-        # Use EXTERNAL (MUST be provided by FFMPEG) lossless codec
-        self.oc_fourcc = cv.VideoWriter_fourcc(*'FFV1')
         self.b_new_file_at_next_write = False
 
         # e.g. ./data/2019-04-16_16-12-34
@@ -88,7 +86,10 @@ class CMuPaVideoWriter(object):
         self.i_out_frame_id_cumsum = 0
 
         # e.g. ./data/2019-04-16_16-12-34/H16_M12_S34/msCam1.avi
-        self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
+        if cv.__version__.startswith('3'):
+            self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
+        else:
+            self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.mp4" % (self.s_file_prefix, self.i_out_file_id))
 
         # request to make new output file at next call of the self.write_next_frame() method
         self.b_new_file_at_next_write = True
@@ -96,6 +97,23 @@ class CMuPaVideoWriter(object):
     def __del__(self):
         if self.oc_video_writer is not None:
             self.oc_video_writer.release()
+
+    def __set_video_writer(self):
+        if cv.__version__.startswith('3'):
+            self.oc_video_writer = cv.VideoWriter( \
+                self.s_out_fname, \
+                cv.VideoWriter_fourcc(*'FFV1'), \
+                self.f_fps, \
+                (self.i_frame_w, self.i_frame_h) \
+            )
+        else:
+            self.oc_video_writer = cv.VideoWriter( \
+                self.s_out_fname, \
+                apiPreference=cv.CAP_MSMF, \
+                fourcc=cv.VideoWriter_fourcc(*'av01'), \
+                fps=self.f_fps, \
+                frameSize=(self.i_frame_w, self.i_frame_h) \
+            )
 
     def get_current_rses_dir(self):
         return self.s_out_rses_dir
@@ -108,7 +126,7 @@ class CMuPaVideoWriter(object):
             raise ValueError("Unexpected state. Please contact developer(s)")
 
         if self.b_new_file_at_next_write:
-            self.oc_video_writer = cv.VideoWriter(self.s_out_fname, self.oc_fourcc, self.f_fps, (self.i_frame_w, self.i_frame_h))
+            self.__set_video_writer()
             self.b_new_file_at_next_write = False
 
         self.oc_video_writer.write(na_in)
@@ -119,7 +137,10 @@ class CMuPaVideoWriter(object):
             self.oc_video_writer.release()
             self.i_out_file_id += 1
             self.i_out_frame_id = 0
-            self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
+            if cv.__version__.startswith('3'):
+                self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.avi" % (self.s_file_prefix, self.i_out_file_id))
+            else:
+                self.s_out_fname = os.path.join(self.s_out_rses_dir, "%s%i.mp4" % (self.s_file_prefix, self.i_out_file_id))
             self.b_new_file_at_next_write = True
 
     def write_time_stamp(self, i_frame_src_idx, f_time_stamp):

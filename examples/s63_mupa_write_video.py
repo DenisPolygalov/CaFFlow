@@ -64,7 +64,10 @@ def write_single_session(oc_vcap, oc_writer, i_nframes_max):
 def test_single_stream():
     f_fps_desired = 20.0
     i_nframes_max = 200
-    oc_vcap = cv.VideoCapture(0)
+    if cv.__version__.startswith('3'):
+        oc_vcap = cv.VideoCapture(0 + cv.CAP_DSHOW)
+    else:
+        oc_vcap = cv.VideoCapture(0, apiPreference=cv.CAP_MSMF)
     f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
     i_frame_w = int(oc_vcap.get(cv.CAP_PROP_FRAME_WIDTH))
     i_frame_h = int(oc_vcap.get(cv.CAP_PROP_FRAME_HEIGHT))
@@ -123,7 +126,10 @@ def write_multi_session(oc_vcap, oc_writer_master, oc_writer_slave, i_nframes_ma
 def test_multi_stream():
     f_fps_desired = 20.0
     i_nframes_max = 200
-    oc_vcap = cv.VideoCapture(0)
+    if cv.__version__.startswith('3'):
+        oc_vcap = cv.VideoCapture(0 + cv.CAP_DSHOW)
+    else:
+        oc_vcap = cv.VideoCapture(0, apiPreference=cv.CAP_MSMF)
     f_fps = oc_vcap.get(cv.CAP_PROP_FPS)
     i_frame_w = int(oc_vcap.get(cv.CAP_PROP_FRAME_WIDTH))
     i_frame_h = int(oc_vcap.get(cv.CAP_PROP_FRAME_HEIGHT))
