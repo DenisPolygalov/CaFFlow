@@ -5,7 +5,7 @@ import os
 import sys
 import cv2 as cv
 import numpy as np
-from scipy.stats import median_absolute_deviation
+from scipy.stats import median_abs_deviation
 
 from .mupamovie import CMuPaMovieCV
 from .mupamovie import CMuPaMovieZF
@@ -152,7 +152,7 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
         if np.sum(na_1spans) == 0:
             continue
         na_median_at_events = np.median( na_1trace[np.where(na_1spans > 0)] )
-        na_dFF_SNR[ii] = na_median_at_events / median_absolute_deviation(na_1trace)
+        na_dFF_SNR[ii] = na_median_at_events / median_abs_deviation(na_1trace)
     oc_roi_picker.d_FLUO['dFF_SNR'] = na_dFF_SNR
 
     # RE-create a multi-part movie object
