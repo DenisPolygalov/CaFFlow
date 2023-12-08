@@ -147,9 +147,9 @@ class CMuPaMovieCV(CMuPaMovie):
 
     def _get_video_capture(self, s_file_name):
         if cv.__version__.startswith('3'):
-            return cv.VideoCapture(0 + cv.CAP_DSHOW)
+            return cv.VideoCapture(s_file_name)
         else:
-            return cv.VideoCapture(0, apiPreference=cv.CAP_MSMF)
+            return cv.VideoCapture(s_file_name, apiPreference=cv.CAP_MSMF) # FIXME not tested
 
     def _seek_rel(self, file_idx, frame_num):
         b_ret = False

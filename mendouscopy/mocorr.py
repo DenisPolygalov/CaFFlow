@@ -55,7 +55,7 @@ def bin_median(na_input, i_win_sz=10, b_exclude_nans=True):
     T, d1, d2 = np.shape(na_input)
     if T < i_win_sz:
         i_win_sz = T
-    num_windows = np.int(np.floor(T / i_win_sz)) # re-implementation of the old_div()
+    num_windows = np.int64(np.floor(T / i_win_sz)) # re-implementation of the old_div()
     num_frames = num_windows * i_win_sz
     if b_exclude_nans:
         na_out = np.nanmedian(np.nanmean(np.reshape(
@@ -74,8 +74,8 @@ def bootstrap_template(oc_movie, i_tmpl_nframes, s_method="head", i_color_ch=0, 
     Only single color/grayscale/np.float32 type of input supported.
     """
     i_max_nframes = oc_movie.df_info['frames'].sum()
-    i_half_nframes = np.int(i_max_nframes/2)
-    i_half_ntmpl   = np.int(i_tmpl_nframes/2)
+    i_half_nframes = np.int64(i_max_nframes/2)
+    i_half_ntmpl   = np.int64(i_tmpl_nframes/2)
 
     if i_tmpl_nframes >= i_max_nframes:
         raise ValueError("Requested template size(%d) is too big for this movie(%d)" % (i_tmpl_nframes,i_max_nframes) )

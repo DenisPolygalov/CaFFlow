@@ -124,7 +124,7 @@ def test_tiling_synthetic_data():
     i_nrow_tiles, i_ncol_tiles = 8, 8
 
     # the input image
-    na_img = np.zeros(i_nrows * i_ncols, dtype=np.int).reshape(i_nrows, i_ncols)
+    na_img = np.zeros(i_nrows * i_ncols, dtype=np.int32).reshape(i_nrows, i_ncols)
 
     # the tiled image
     oc_tiled_img = CTiledFrame(na_img, i_nrow_tiles, i_ncol_tiles)
@@ -216,7 +216,7 @@ def test_stitching_synthetic_data():
     i_patch_overlap_width = 16
 
     # the input image
-    na_img = np.zeros(i_nrows * i_ncols, dtype=np.int).reshape(i_nrows, i_ncols)
+    na_img = np.zeros(i_nrows * i_ncols, dtype=np.int32).reshape(i_nrows, i_ncols)
 
     # this tiled image is used only for generation of testing data
     oc_tiled_img = CTiledFrame(na_img, i_nrow_tiles, i_ncol_tiles)

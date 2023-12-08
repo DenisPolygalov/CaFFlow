@@ -41,10 +41,10 @@ class CIntensityProjector(object):
         self.d_IPROJ = {}
 
         self.na_iproj_max = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
-        self.na_idx_max = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
+        self.na_idx_max = np.zeros([i_frame_h, i_frame_w], dtype=bool)
 
         self.na_iproj_min = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
-        self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=np.bool)
+        self.na_idx_min = np.zeros([i_frame_h, i_frame_w], dtype=bool)
 
         self.na_iproj_std_delta = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)
         self.na_iproj_std_mean = np.zeros([i_frame_h, i_frame_w], dtype=np.float64)

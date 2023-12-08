@@ -166,7 +166,7 @@ class CFastGuidedFilter(object):
     http://kaiminghe.com/eccv10/
     """
     def __init__(self, i_filter_sz, f_eps=0.01):
-        self.i_filter_sz = np.int(i_filter_sz)
+        self.i_filter_sz = np.int32(i_filter_sz)
         self.f_eps = f_eps
         self.t_filter_sz = ((2 * self.i_filter_sz) + 1, (2 * self.i_filter_sz) + 1)
         # main data exchange interface for this class

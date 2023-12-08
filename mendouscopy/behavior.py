@@ -308,7 +308,7 @@ def find_segments(na_x, f_thr_amp, i_thr_len):
     if (na_x >= f_thr_amp).all():
         raise ValueError("find_segments: ﻿amplitude threshold (f_thr_amp) is too low")
 
-    i_thr_len = np.int(np.floor(i_thr_len))
+    i_thr_len = np.int32(np.floor(i_thr_len))
 
     if i_thr_len < 2:
         raise ValueError("find_segments: length threshold (i_thr_len) is too short (less than 2)")
@@ -326,7 +326,7 @@ def find_segments(na_x, f_thr_amp, i_thr_len):
     # In order to detect 0 -> 1 and 1 -> 0 transitions in x1, we use np.diff()
 
     na_x_gt_thr_amp_bool = na_x >= f_thr_amp  # boolean ndarray: where na_x is greater than f_thr_amp
-    na_x_gt_thr_amp      = np.array(list(map(np.int, na_x_gt_thr_amp_bool)))  # boolean converted to 0s and 1s
+    na_x_gt_thr_amp      = np.array(list(map(np.int32, na_x_gt_thr_amp_bool)))  # boolean converted to 0s and 1s
     # array of differences
     # 0: no change; 1: increase; -1: decrease
     na_diff_x            = np.diff(na_x_gt_thr_amp)

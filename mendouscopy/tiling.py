@@ -42,8 +42,8 @@ class CTiledFrame(object):
         #
         self._i_nrows = i_nrows
         self._i_ncols = i_ncols
-        self._Ridx = np.linspace(0, na_input.shape[0], (i_nrows + 1), dtype=np.int)
-        self._Cidx = np.linspace(0, na_input.shape[1], (i_ncols + 1), dtype=np.int)
+        self._Ridx = np.linspace(0, na_input.shape[0], (i_nrows + 1), dtype=np.int32)
+        self._Cidx = np.linspace(0, na_input.shape[1], (i_ncols + 1), dtype=np.int32)
 
         if   len(na_input.shape) == 3: self._b_have_color_data = True
         elif len(na_input.shape) == 2: self._b_have_color_data = False
@@ -125,8 +125,8 @@ class CStitchedFrame(object):
         self._i_last_col = i_ncols - 1
         self.i_border_sz = i_border_sz
         self._i_hb_sz = int(i_border_sz/2) # half of the border size
-        self._Ridx = np.linspace(0, na_input.shape[0], (i_nrows + 1), dtype=np.int)
-        self._Cidx = np.linspace(0, na_input.shape[1], (i_ncols + 1), dtype=np.int)
+        self._Ridx = np.linspace(0, na_input.shape[0], (i_nrows + 1), dtype=np.int32)
+        self._Cidx = np.linspace(0, na_input.shape[1], (i_ncols + 1), dtype=np.int32)
         self.t_base_tile_shape = (int(na_input.shape[0] / i_nrows), int(na_input.shape[1] / i_ncols))
 
         # main data exchange interface for this class
@@ -392,7 +392,7 @@ if __name__ == '__main__':
     i_nrow_tiles, i_ncol_tiles = 2, 2
 
     # the input image
-    na_img = np.arange(i_nrows * i_ncols, dtype=np.int).reshape(i_nrows, i_ncols)
+    na_img = np.arange(i_nrows * i_ncols, dtype=np.int32).reshape(i_nrows, i_ncols)
 
     print("Input array (frame):")
     print(na_img)
@@ -418,7 +418,7 @@ if __name__ == '__main__':
         print()
 
     print("Assign new values (ones) to the whole frame:")
-    na_ones = np.ones(i_nrows * i_ncols, dtype=np.int).reshape(i_nrows, i_ncols)
+    na_ones = np.ones(i_nrows * i_ncols, dtype=np.int32).reshape(i_nrows, i_ncols)
     oc_timg[...] = na_ones
 
     for ix, iy in np.ndindex(oc_timg.shape):
