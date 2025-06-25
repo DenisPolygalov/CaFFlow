@@ -203,8 +203,8 @@ class CBehavPositionDetector(object):
     def finalize_detection(self):
         self.d_POS["call_cnt_raw"]     = np.array(self.l_call_cnt, dtype=np.int32)
         self.d_POS["keypoint_id_raw"]  = np.array(self.l_kp_id,    dtype=np.int32)
-        self.d_POS["keypoint_sz_raw"]  = np.array(self.l_kp_size,  dtype=np.float)
-        self.d_POS["position_rel_raw"] = np.array(self.l_position, dtype=np.float)
+        self.d_POS["keypoint_sz_raw"]  = np.array(self.l_kp_size,  dtype=np.float32)
+        self.d_POS["position_rel_raw"] = np.array(self.l_position, dtype=np.float32)
         self.d_POS["position_rel"] = remove_extra_keypoints(
             self.d_POS["position_rel_raw"],
             self.d_POS["call_cnt_raw"],

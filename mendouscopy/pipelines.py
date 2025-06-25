@@ -144,7 +144,7 @@ def pickup_rois_extract_fluo(s_target_dir, d_param, s_out_fname_prefix, b_overwr
 
     # calculate SNR value for each dFF trace
     _, i_nROIs = oc_roi_picker.d_FLUO['dFF'].shape
-    na_dFF_SNR = np.zeros(i_nROIs, dtype=np.float)
+    na_dFF_SNR = np.zeros(i_nROIs, dtype=np.float32)
     for ii in range(i_nROIs):
         na_1trace = oc_roi_picker.d_FLUO['dFF'][:,ii]
         na_1spans = na_dFF_evt_spans[:,ii]

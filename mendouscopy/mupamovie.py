@@ -452,9 +452,9 @@ class CSingleTiffWriter(object):
         self.oc_tiff = tifffile.TiffWriter(self.s_fname_out, bigtiff=True)
     def write_next_frame(self, na_in):
         if na_in.dtype == np.uint16:
-            self.oc_tiff.save(na_in, compress=6)
+            self.oc_tiff.write(na_in, compression='zlib')
         else:
-            self.oc_tiff.save(cv.normalize(na_in, None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U), compress=6)
+            self.oc_tiff.write(cv.normalize(na_in, None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U), compression='zlib')
         return True
     def close(self):
         self.oc_tiff.close()

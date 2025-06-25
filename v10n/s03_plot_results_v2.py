@@ -53,11 +53,11 @@ def plot_result(s_input_dir, s_input_ini_file, s_fname_prefix):
 
     na_img_16U = cv.normalize(d_fluo_data['IPROJ_max'], None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U)
     with tifffile.TiffWriter(s_out_fname_iproj_max, bigtiff=False) as h_file:
-        h_file.save(na_img_16U)
+        h_file.write(na_img_16U)
 
     na_img_16U = cv.normalize(d_fluo_data['IPROJ_std'], None, alpha=0, beta=(2**16-1), norm_type=cv.NORM_MINMAX, dtype=cv.CV_16U)
     with tifffile.TiffWriter(s_out_fname_iproj_std, bigtiff=False) as h_file:
-        h_file.save(na_img_16U)
+        h_file.write(na_img_16U)
 
     # create data viewer
     # we have to keep reference to this object

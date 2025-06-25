@@ -42,7 +42,7 @@ def convert_tiff(s_fname_in, s_fname_out):
     i_nframes, i_nrows, i_ncols  = na_data.shape
     with tifffile.TiffWriter(s_fname_out, bigtiff=False) as h_file:
         for i_frame_idx in range(i_nframes):
-            h_file.save(na_data[i_frame_idx,...])
+            h_file.write(na_data[i_frame_idx,...])
 #
 
 

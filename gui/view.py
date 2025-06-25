@@ -127,7 +127,7 @@ class CPerROIDataViewer(object):
         self.f_rect_hsz = self.f_rect_sz/2
         self.oc_fig = plt.figure(figsize=(14,8))
         oc_gspec = GridSpec(2, 2, height_ratios=[3, 1], figure=self.oc_fig)
-        self.na_axes = np.zeros([2,2], dtype=np.object)
+        self.na_axes = np.zeros([2,2], dtype=object)
         self.na_axes[0,0] = self.oc_fig.add_subplot(oc_gspec[0,0])
         self.na_axes[0,1] = self.oc_fig.add_subplot(oc_gspec[0,1], sharex=self.na_axes[0,0], sharey=self.na_axes[0,0])
         self.na_axes[1,0] = self.oc_fig.add_subplot(oc_gspec[1,:])
