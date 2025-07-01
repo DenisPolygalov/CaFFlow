@@ -84,7 +84,8 @@ class CSimpleDataViewer(object):
         i_col = int(f_x + 0.5)
         i_row = int(f_y + 0.5)
         if i_col >= 0 and i_col < self.na_ROI_mask.shape[1] and i_row >= 0 and i_row < self.na_ROI_mask.shape[0]:
-            i_ret = self.na_ROI_mask[i_row, i_col] - 1
+            if self.na_ROI_mask[i_row, i_col] > 0:
+                i_ret = self.na_ROI_mask[i_row, i_col] - 1
         return i_ret
     #
     def select_line(self, i_line_idx):
@@ -260,7 +261,8 @@ class CPerROIDataViewer(object):
         i_col = int(f_x + 0.5)
         i_row = int(f_y + 0.5)
         if i_col >= 0 and i_col < self.na_ROI_mask.shape[1] and i_row >= 0 and i_row < self.na_ROI_mask.shape[0]:
-            i_ret = self.na_ROI_mask[i_row, i_col] - 1
+            if self.na_ROI_mask[i_row, i_col] > 0:
+                i_ret = self.na_ROI_mask[i_row, i_col] - 1
         return i_ret
     #
     def plot_dFF_trace(self, i_trace_idx):
